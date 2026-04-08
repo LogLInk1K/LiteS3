@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getPresignedGetUrl } from "@/lib/r2";
+import { r2, getBucketName } from "@/lib/r2";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
+import sharp from "sharp";
 
-const thumbnailCache = new Map<string, { url: string; expiresAt: number }>();
+const imageCache = new Map<string, { data: ArrayBuffer; contentType: string; expiresAt: number }>();
+
+const THUMBNAIL_SIZE = 200;
+const CACHE_TTL = 50 * 60 * 1000;
+const MAX_CACHE_ENTRIES = 500;
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
@@ -14,26 +20,57 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const key = searchParams.get("key");
+    const size = Math.min(parseInt(searchParams.get("size") || String(THUMBNAIL_SIZE)), 800);
 
     if (!key) {
       return NextResponse.json({ error: "Key is required" }, { status: 400 });
     }
 
-    const cached = thumbnailCache.get(key);
+    const cacheKey = `${key}:${size}`;
+    const cached = imageCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
-      return NextResponse.json({ url: cached.url });
+      return new Response(cached.data, {
+        headers: {
+          "Content-Type": cached.contentType,
+          "Cache-Control": "public, max-age=3600, immutable",
+        },
+      });
     }
 
-    const url = await getPresignedGetUrl(key, 3600);
+    const command = new GetObjectCommand({
+      Bucket: getBucketName(),
+      Key: key,
+    });
 
-    thumbnailCache.set(key, { url, expiresAt: Date.now() + 50 * 60 * 1000 });
+    const response = await r2.send(command);
 
-    if (thumbnailCache.size > 500) {
-      const oldest = thumbnailCache.keys().next().value;
-      if (oldest) thumbnailCache.delete(oldest);
+    if (!response.Body) {
+      return NextResponse.json({ error: "Empty response" }, { status: 500 });
     }
 
-    return NextResponse.json({ url });
+    const bytes = await response.Body.transformToByteArray();
+    const buffer = Buffer.from(bytes);
+
+    const resized = await sharp(buffer)
+      .resize(size, size, { fit: "inside", withoutEnlargement: true })
+      .webp({ quality: 70 })
+      .toBuffer();
+
+    const contentType = "image/webp";
+    const data = resized.buffer.slice(resized.byteOffset, resized.byteOffset + resized.byteLength) as ArrayBuffer;
+
+    if (imageCache.size >= MAX_CACHE_ENTRIES) {
+      const oldest = imageCache.keys().next().value;
+      if (oldest) imageCache.delete(oldest);
+    }
+    imageCache.set(cacheKey, { data, contentType, expiresAt: Date.now() + CACHE_TTL });
+
+    return new Response(data, {
+      headers: {
+        "Content-Type": contentType,
+        "Cache-Control": "public, max-age=3600, immutable",
+      },
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

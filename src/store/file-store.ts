@@ -24,6 +24,7 @@ interface FileStore {
   previewItem: FileOrFolder | null;
   viewMode: "grid" | "list";
   contextMenu: { item: FileOrFolder; x: number; y: number } | null;
+  currentPage: number;
 
   setCurrentPrefix: (prefix: string) => void;
   navigateToFolder: (folderKey: string) => void;
@@ -35,6 +36,7 @@ interface FileStore {
   setViewMode: (mode: "grid" | "list") => void;
   openContextMenu: (item: FileOrFolder, x: number, y: number) => void;
   closeContextMenu: () => void;
+  setCurrentPage: (page: number) => void;
 }
 
 export const useFileStore = create<FileStore>((set, get) => ({
@@ -45,6 +47,7 @@ export const useFileStore = create<FileStore>((set, get) => ({
   previewItem: null,
   viewMode: "grid",
   contextMenu: null,
+  currentPage: 1,
 
   setCurrentPrefix: (prefix) => set({ currentPrefix: prefix }),
 
@@ -55,6 +58,7 @@ export const useFileStore = create<FileStore>((set, get) => ({
       pathStack: [...pathStack, currentPrefix],
       selectedItems: new Set<string>(),
       previewItem: null,
+      currentPage: 1,
     });
   },
 
@@ -68,10 +72,11 @@ export const useFileStore = create<FileStore>((set, get) => ({
       pathStack: newStack,
       selectedItems: new Set<string>(),
       previewItem: null,
+      currentPage: 1,
     });
   },
 
-  setSearchQuery: (query) => set({ searchQuery: query }),
+  setSearchQuery: (query) => set({ searchQuery: query, currentPage: 1 }),
 
   toggleSelect: (key) => {
     const { selectedItems } = get();
@@ -92,4 +97,5 @@ export const useFileStore = create<FileStore>((set, get) => ({
 
   openContextMenu: (item, x, y) => set({ contextMenu: { item, x, y } }),
   closeContextMenu: () => set({ contextMenu: null }),
+  setCurrentPage: (page) => set({ currentPage: page }),
 }));

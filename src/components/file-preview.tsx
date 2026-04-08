@@ -11,12 +11,6 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
-import { getCachedUrl, fetchThumbnailUrl } from "@/hooks/use-thumbnail";
-
-function registerLanguages() {
-  const ext = ["javascript", "typescript", "python", "go", "rust", "java", "cpp", "c", "csharp", "ruby", "php", "swift", "kotlin", "sql", "bash", "json", "yaml", "xml", "html", "css", "scss", "markdown"];
-  return ext;
-}
 
 export function FilePreview() {
   const { previewItem, setPreviewItem } = useFileStore();
@@ -65,7 +59,7 @@ export function FilePreview() {
 
   return (
     <Dialog open={!!previewItem} onOpenChange={(open) => !open && setPreviewItem(null)}>
-      <DialogContent className="max-w-4xl max-h-[85vh] overflow-auto">
+      <DialogContent className="w-[800px] h-[600px] max-w-[90vw] max-h-[85vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span className="truncate">{fileItem.name}</span>
@@ -75,9 +69,9 @@ export function FilePreview() {
           </DialogTitle>
         </DialogHeader>
 
-        <div className="mt-4">
+        <div className="flex-1 min-h-0 mt-4">
           {loading ? (
-            <div className="flex items-center justify-center h-64">
+            <div className="flex items-center justify-center h-full">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : isImageFile(fileItem.name) ? (
@@ -87,20 +81,22 @@ export function FilePreview() {
           ) : isAudioFile(fileItem.name) ? (
             <MediaPreview fileKey={fileItem.key} type="audio" />
           ) : isMarkdownFile(fileItem.name) && content ? (
-            <div className="prose prose-sm dark:prose-invert max-w-none">
+            <div className="h-full overflow-auto prose prose-sm dark:prose-invert max-w-none">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
             </div>
           ) : (isCodeFile(fileItem.name) || isTextFile(fileItem.name)) && content ? (
-            <SyntaxHighlighter
-              language={ext || "text"}
-              style={atomOneDark}
-              customStyle={{ borderRadius: "0.5rem", fontSize: "0.875rem" }}
-              showLineNumbers
-            >
-              {content}
-            </SyntaxHighlighter>
+            <div className="h-full overflow-auto">
+              <SyntaxHighlighter
+                language={ext || "text"}
+                style={atomOneDark}
+                customStyle={{ borderRadius: "0.5rem", fontSize: "0.875rem" }}
+                showLineNumbers
+              >
+                {content}
+              </SyntaxHighlighter>
+            </div>
           ) : (
-            <div className="flex items-center justify-center h-32 text-muted-foreground">
+            <div className="flex items-center justify-center h-full text-muted-foreground">
               此文件类型暂不支持预览
             </div>
           )}
@@ -111,48 +107,48 @@ export function FilePreview() {
 }
 
 function ImagePreview({ fileKey }: { fileKey: string }) {
-  const [url, setUrl] = useState<string | null>(() => getCachedUrl(fileKey));
+  const linkMutation = useFileLink();
+  const [url, setUrl] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (url) return;
-    fetchThumbnailUrl(fileKey).then((result) => {
-      if (result) setUrl(result);
+    setLoaded(false);
+    linkMutation.mutateAsync({ key: fileKey }).then((result) => {
+      if (result.url) setUrl(result.url);
     });
-  }, [fileKey, url]);
-
-  if (!url) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  }, [fileKey]);
 
   return (
-    <div className="flex items-center justify-center">
-      <img src={url} alt={fileKey} className="max-w-full max-h-[70vh] object-contain rounded-lg" />
+    <div className="flex items-center justify-center h-full relative">
+      {!loaded && (
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      )}
+      {url && (
+        <img
+          src={url}
+          alt={fileKey}
+          className="max-w-full max-h-full object-contain rounded-lg transition-opacity duration-300"
+          style={{ opacity: loaded ? 1 : 0 }}
+          onLoad={() => setLoaded(true)}
+        />
+      )}
     </div>
   );
 }
 
 function MediaPreview({ fileKey, type }: { fileKey: string; type: "video" | "audio" }) {
-  const [url, setUrl] = useState<string | null>(() => getCachedUrl(fileKey));
   const linkMutation = useFileLink();
+  const [url, setUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (url) return;
-    fetchThumbnailUrl(fileKey).then((result) => {
-      if (result) setUrl(result);
-    }).catch(() => {
-      linkMutation.mutateAsync({ key: fileKey }).then((result) => {
-        if (result.url) setUrl(result.url);
-      });
+    linkMutation.mutateAsync({ key: fileKey }).then((result) => {
+      if (result.url) setUrl(result.url);
     });
-  }, [fileKey, url]);
+  }, [fileKey]);
 
   if (!url) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center h-full">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
@@ -160,14 +156,14 @@ function MediaPreview({ fileKey, type }: { fileKey: string; type: "video" | "aud
 
   if (type === "video") {
     return (
-      <div className="flex items-center justify-center">
-        <video src={url} controls className="max-w-full max-h-[70vh] rounded-lg" />
+      <div className="flex items-center justify-center h-full">
+        <video src={url} controls className="max-w-full max-h-full rounded-lg" />
       </div>
     );
   }
 
   return (
-    <div className="flex items-center justify-center py-8">
+    <div className="flex items-center justify-center h-full">
       <audio src={url} controls className="w-full max-w-lg" />
     </div>
   );

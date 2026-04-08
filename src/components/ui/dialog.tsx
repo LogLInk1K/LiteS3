@@ -45,7 +45,7 @@ export function DialogContent({ children, className }: { children: React.ReactNo
       <div className="fixed inset-0 bg-black/80" onClick={() => onOpenChange(false)} />
       <div
         className={cn(
-          "relative z-50 grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg sm:rounded-lg animate-in fade-in-0 zoom-in-95",
+          "relative z-50 grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg rounded-lg animate-in fade-in-0 zoom-in-95",
           className
         )}
       >
