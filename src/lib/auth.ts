@@ -1,34 +1,60 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { getDatabase, schema, ensureDatabase } from "./db";
+import { eq } from "drizzle-orm";
 
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin";
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "credentials",
       credentials: {
-        username: { label: "用户名", type: "text", placeholder: "请输入用户名" },
-        password: { label: "密码", type: "password", placeholder: "请输入密码" },
+        username: { label: "Username", type: "text", placeholder: "Enter username" },
+        password: { label: "Password", type: "password", placeholder: "Enter password" },
       },
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) {
           return null;
         }
 
-        if (
-          credentials.username === ADMIN_USERNAME &&
-          credentials.password === ADMIN_PASSWORD
-        ) {
-          return {
-            id: "1",
-            name: ADMIN_USERNAME,
-            email: `${ADMIN_USERNAME}@r2-files.local`,
-          };
-        }
+        try {
+          await ensureDatabase();
+          const db = getDatabase();
+          const result = await db
+            .select()
+            .from(schema.users)
+            .where(eq(schema.users.username, credentials.username))
+            .limit(1);
 
-        return null;
+          const user = result[0];
+
+          if (!user) {
+            return null;
+          }
+
+          const passwordHash = await hashPassword(credentials.password);
+
+          if (user.passwordHash !== passwordHash) {
+            return null;
+          }
+
+          return {
+            id: user.id,
+            name: user.username,
+            email: user.email || undefined,
+            role: user.role,
+          };
+        } catch (error) {
+          console.error("Auth error:", error);
+          return null;
+        }
       },
     }),
   ],
@@ -44,12 +70,14 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.role = (user as any).role;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         (session.user as any).id = token.id;
+        (session.user as any).role = token.role;
       }
       return session;
     },

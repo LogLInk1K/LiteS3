@@ -4,6 +4,12 @@ out/
 dist/
 build/
 
+.data/
+
+*.db
+*.sqlite
+*.sqlite3
+
 .env
 .env.local
 .env.development.local
@@ -29,3 +35,5 @@ Thumbs.db
 *.swo
 
 coverage/
+
+.design/

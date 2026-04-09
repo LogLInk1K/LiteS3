@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { r2, getBucketName } from "@/lib/r2";
+import { createS3Client, getDefaultBucket } from "@/lib/s3";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { ensureDatabase } from "@/lib/db";
 import sharp from "sharp";
 
 const imageCache = new Map<string, { data: ArrayBuffer; contentType: string; expiresAt: number }>();
@@ -18,15 +19,23 @@ export async function GET(request: Request) {
   }
 
   try {
+    await ensureDatabase();
+    
     const { searchParams } = new URL(request.url);
     const key = searchParams.get("key");
+    const bucketId = searchParams.get("bucketId") || undefined;
     const size = Math.min(parseInt(searchParams.get("size") || String(THUMBNAIL_SIZE)), 800);
 
     if (!key) {
       return NextResponse.json({ error: "Key is required" }, { status: 400 });
     }
 
-    const cacheKey = `${key}:${size}`;
+    const bucket = await getDefaultBucket();
+    if (!bucket) {
+      return NextResponse.json({ error: "No bucket configured" }, { status: 400 });
+    }
+
+    const cacheKey = `${bucketId || bucket.id}:${key}:${size}`;
     const cached = imageCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
       return new Response(cached.data, {
@@ -37,12 +46,13 @@ export async function GET(request: Request) {
       });
     }
 
+    const client = createS3Client(bucket);
     const command = new GetObjectCommand({
-      Bucket: getBucketName(),
+      Bucket: bucket.bucketName,
       Key: key,
     });
 
-    const response = await r2.send(command);
+    const response = await client.send(command);
 
     if (!response.Body) {
       return NextResponse.json({ error: "Empty response" }, { status: 500 });
@@ -72,6 +82,7 @@ export async function GET(request: Request) {
       },
     });
   } catch (error: any) {
+    console.error("GET /api/files/thumbnail error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

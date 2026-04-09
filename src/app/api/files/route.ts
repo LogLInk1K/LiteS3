@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { listObjects } from "@/lib/r2";
+import { listObjects, getDefaultBucket, getBucketConfig } from "@/lib/s3";
+import { ensureDatabase } from "@/lib/db";
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
@@ -10,10 +11,18 @@ export async function GET(request: Request) {
   }
 
   try {
+    await ensureDatabase();
+    
     const { searchParams } = new URL(request.url);
     const prefix = searchParams.get("prefix") || "";
+    const bucketId = searchParams.get("bucketId") || undefined;
 
-    const result = await listObjects(prefix);
+    const bucket = bucketId ? await getBucketConfig(bucketId) : await getDefaultBucket();
+    if (!bucket) {
+      return NextResponse.json({ error: "No bucket configured" }, { status: 400 });
+    }
+
+    const result = await listObjects(bucketId || bucket.id, prefix);
 
     const folders = (result.CommonPrefixes || []).map((cp) => ({
       key: cp.Prefix!,
@@ -31,8 +40,9 @@ export async function GET(request: Request) {
         type: "file" as const,
       }));
 
-    return NextResponse.json({ folders, files, prefix });
+    return NextResponse.json({ folders, files, prefix, bucketId: bucketId || bucket.id });
   } catch (error: any) {
+    console.error("GET /api/files error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

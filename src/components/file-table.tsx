@@ -4,7 +4,6 @@ import { useFileStore, FileOrFolder } from "@/store/file-store";
 import { useFiles } from "@/hooks/use-files";
 import { FileCard } from "./file-card";
 import { FileListItem } from "./file-list-item";
-import { cn } from "@/lib/utils";
 import { LayoutGrid, List, ChevronRight, ChevronLeft, Home, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 
@@ -36,7 +35,7 @@ export function FileTable() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-2 px-4 py-3 border-b">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border-standard bg-bg-panel">
         <Button
           variant="ghost"
           size="icon"
@@ -44,19 +43,20 @@ export function FileTable() {
             if (pathStack.length > 0) navigateUp();
           }}
           disabled={pathStack.length === 0}
+          className="h-8 w-8 rounded-lg hover:bg-hover-bg disabled:opacity-50"
         >
-          <Home className="h-4 w-4" />
+          <Home className="h-4 w-4 text-text-tertiary" />
         </Button>
 
-        <div className="flex items-center gap-1 text-sm text-muted-foreground overflow-x-auto flex-1">
+        <div className="flex items-center gap-1 text-sm text-text-quaternary overflow-x-auto flex-1">
           <button
             onClick={() => {
               setCurrentPrefix("");
               useFileStore.setState({ pathStack: [], currentPage: 1 });
             }}
-            className="hover:text-foreground transition-colors whitespace-nowrap"
+            className="hover:text-text-primary transition-colors whitespace-nowrap"
           >
-            根目录
+            Root
           </button>
           {pathParts.map((part, index) => {
             const prefix = pathParts.slice(0, index + 1).join("/") + "/";
@@ -73,7 +73,7 @@ export function FileTable() {
                       currentPage: 1,
                     });
                   }}
-                  className="hover:text-foreground transition-colors"
+                  className="hover:text-text-primary transition-colors"
                 >
                   {part}
                 </button>
@@ -87,32 +87,37 @@ export function FileTable() {
             variant={viewMode === "grid" ? "secondary" : "ghost"}
             size="icon"
             onClick={() => setViewMode("grid")}
+            className="h-8 w-8 rounded-lg"
           >
-            <LayoutGrid className="h-4 w-4" />
+            <LayoutGrid className="h-4 w-4 text-text-tertiary" />
           </Button>
           <Button
             variant={viewMode === "list" ? "secondary" : "ghost"}
             size="icon"
             onClick={() => setViewMode("list")}
+            className="h-8 w-8 rounded-lg"
           >
-            <List className="h-4 w-4" />
+            <List className="h-4 w-4 text-text-tertiary" />
           </Button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-4 will-change-transform">
+      <div className="flex-1 overflow-auto p-4 will-change-transform bg-bg-marketing">
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <Loader2 className="h-8 w-8 animate-spin text-brand-indigo" />
           </div>
         ) : error ? (
-          <div className="flex items-center justify-center h-64 text-destructive">
-            加载失败: {(error as Error).message}
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <p className="text-text-primary text-lg">Failed to load</p>
+              <p className="text-text-quaternary text-sm mt-1">{(error as Error).message}</p>
+            </div>
           </div>
         ) : filteredItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-            <p className="text-lg">空文件夹</p>
-            <p className="text-sm mt-1">拖拽文件到此处上传</p>
+          <div className="flex flex-col items-center justify-center h-64 text-text-quaternary">
+            <p className="text-lg text-text-tertiary">Empty folder</p>
+            <p className="text-sm mt-1">Drag and drop files to upload</p>
           </div>
         ) : viewMode === "grid" ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
@@ -122,12 +127,12 @@ export function FileTable() {
           </div>
         ) : (
           <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-3 px-3 py-2 text-xs text-muted-foreground border-b">
+            <div className="flex items-center gap-3 px-3 py-2 text-xs text-text-quaternary border-b border-border-subtle">
               <div className="w-4" />
               <div className="h-5 w-5" />
-              <span className="flex-1">名称</span>
-              <span className="w-20 text-right">大小</span>
-              <span className="w-36 text-right">修改时间</span>
+              <span className="flex-1">Name</span>
+              <span className="w-20 text-right">Size</span>
+              <span className="w-36 text-right">Modified</span>
             </div>
             {pagedItems.map((item) => (
               <FileListItem key={item.key} item={item} />
@@ -137,29 +142,29 @@ export function FileTable() {
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-2 border-t bg-background">
-          <span className="text-xs text-muted-foreground">
-            共 {filteredItems.length} 项，第 {safePage}/{totalPages} 页
+        <div className="flex items-center justify-between px-4 py-2 border-t border-border-standard bg-bg-panel">
+          <span className="text-xs text-text-quaternary">
+            {filteredItems.length} items, page {safePage}/{totalPages}
           </span>
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7"
+              className="h-7 w-7 rounded-lg"
               disabled={safePage <= 1}
               onClick={() => setCurrentPage(safePage - 1)}
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4 text-text-tertiary" />
             </Button>
             {generatePageNumbers(safePage, totalPages).map((p, i) =>
               p === "..." ? (
-                <span key={`ellipsis-${i}`} className="px-1 text-xs text-muted-foreground">…</span>
+                <span key={`ellipsis-${i}`} className="px-1 text-xs text-text-quaternary">…</span>
               ) : (
                 <Button
                   key={p}
                   variant={safePage === p ? "secondary" : "ghost"}
                   size="icon"
-                  className="h-7 w-7 text-xs"
+                  className="h-7 w-7 text-xs rounded-lg"
                   onClick={() => setCurrentPage(p as number)}
                 >
                   {p}
@@ -169,11 +174,11 @@ export function FileTable() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7"
+              className="h-7 w-7 rounded-lg"
               disabled={safePage >= totalPages}
               onClick={() => setCurrentPage(safePage + 1)}
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4 text-text-tertiary" />
             </Button>
           </div>
         </div>

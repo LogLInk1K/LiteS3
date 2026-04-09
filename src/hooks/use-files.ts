@@ -9,6 +9,12 @@ async function fetchFiles(prefix: string) {
   return res.json();
 }
 
+async function fetchBuckets() {
+  const res = await fetch("/api/buckets");
+  if (!res.ok) throw new Error("Failed to fetch buckets");
+  return res.json();
+}
+
 async function requestUploadUrl({ key, contentType }: { key: string; contentType: string }) {
   const res = await fetch("/api/files/upload", {
     method: "POST",
@@ -57,6 +63,15 @@ export function useFiles(prefix: string) {
   return useQuery({
     queryKey: ["files", prefix],
     queryFn: () => fetchFiles(prefix),
+  });
+}
+
+export function useBuckets() {
+  return useQuery({
+    queryKey: ["buckets"],
+    queryFn: fetchBuckets,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 }
 
