@@ -49,15 +49,22 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
     
-    const updated = await updateBucketConfig(id, {
+    const updateData: Record<string, unknown> = {
       name: body.name,
       endpoint: body.endpoint,
       region: body.region,
-      accessKeyId: body.accessKeyId,
-      secretAccessKey: body.secretAccessKey,
       bucketName: body.bucketName,
       publicUrl: body.publicUrl,
-    });
+    };
+    
+    if (body.accessKeyId) {
+      updateData.accessKeyId = body.accessKeyId;
+    }
+    if (body.secretAccessKey) {
+      updateData.secretAccessKey = body.secretAccessKey;
+    }
+
+    const updated = await updateBucketConfig(id, updateData);
 
     if (!updated) {
       return NextResponse.json({ error: "Bucket not found" }, { status: 404 });
