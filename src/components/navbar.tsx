@@ -9,7 +9,7 @@ import { UserMenu } from "./user-menu";
 import { useTranslation } from "@/hooks/use-translation";
 
 export function Navbar() {
-  const { searchQuery, setSearchQuery } = useFileStore();
+  const { searchQuery, setSearchQuery, currentBucketId, setCurrentBucketId } = useFileStore();
   const { t } = useTranslation();
 
   return (
@@ -21,7 +21,7 @@ export function Navbar() {
           </div>
           <h1 className="text-sm font-medium text-text-primary hidden sm:block" style={{ letterSpacing: "-0.13px" }}>S3 Manager</h1>
         </Link>
-        <BucketSelector />
+        <BucketSelector currentBucketId={currentBucketId ?? undefined} onBucketChange={setCurrentBucketId} />
       </div>
 
       <div className="flex-1 max-w-md mx-auto relative">

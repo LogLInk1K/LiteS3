@@ -26,7 +26,7 @@ function generateId(): string {
 }
 
 export function useUpload() {
-  const { currentPrefix } = useFileStore();
+  const { currentPrefix, currentBucketId } = useFileStore();
   const queryClient = useQueryClient();
   const [, forceUpdate] = useState({});
 
@@ -57,6 +57,9 @@ export function useUpload() {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("key", key);
+      if (currentBucketId) {
+        formData.append("bucketId", currentBucketId);
+      }
 
       const xhr = new XMLHttpRequest();
 

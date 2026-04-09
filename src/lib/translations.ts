@@ -57,6 +57,8 @@ export const translations = {
       deleteComplete: "Delete complete",
       itemsDeleted: "items deleted",
       cancel: "Cancel",
+      confirm: "Confirm",
+      refresh: "Refresh",
     },
     buckets: {
       noBuckets: "No Storage Buckets",
@@ -164,6 +166,8 @@ export const translations = {
       deleteComplete: "删除完成",
       itemsDeleted: "个项目已删除",
       cancel: "取消",
+      confirm: "确定",
+      refresh: "刷新",
     },
     buckets: {
       noBuckets: "没有存储桶",

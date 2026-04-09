@@ -11,25 +11,27 @@ import { NewFolderDialog } from "./dialogs/new-folder-dialog";
 import { RenameDialog } from "./dialogs/rename-dialog";
 import { MoveCopyDialog } from "./dialogs/move-copy-dialog";
 import { DeleteProgressDialog } from "./dialogs/delete-progress-dialog";
-import { LayoutGrid, List, ChevronRight, ChevronLeft, Home, Upload, X, Download, Move, Copy, Trash2, FolderPlus } from "lucide-react";
+import { LayoutGrid, List, ChevronRight, ChevronLeft, HardDrive, Upload, X, Download, Move, Copy, Trash2, FolderPlus, RotateCw } from "lucide-react";
 import { Button } from "./ui/button";
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useState, useEffect } from "react";
 import { useTranslation } from "@/hooks/use-translation";
+import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 30;
 
 export function FileTable() {
   const {
-    currentPrefix, pathStack, searchQuery, viewMode, currentPage,
+    currentBucketId, currentPrefix, pathStack, searchQuery, viewMode, currentPage,
     navigateUp, setCurrentPrefix, setViewMode, setCurrentPage,
     setSelectedItems, selectedItems, clearSelection,
     renameItem, closeRenameDialog,
     moveCopyItem, moveCopyMode, closeMoveCopyDialog,
+    batchMoveCopyItems, openBatchMoveDialog, openBatchCopyDialog,
     newFolderOpen, openNewFolderDialog, closeNewFolderDialog,
     deleteItems, deleteDialogOpen, startDelete, closeDeleteDialog,
   } = useFileStore();
-  const { data, isLoading, error } = useFiles(currentPrefix);
+  const { data, isLoading, error } = useFiles(currentPrefix, currentBucketId);
   const { activeUploads, uploadFiles, removeUpload } = useUpload();
   const linkMutation = useFileLink();
   const moveMutation = useMoveFile();
@@ -37,6 +39,17 @@ export function FileTable() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [rotation, setRotation] = useState(0);
+
+  const handleRefresh = useCallback(async () => {
+    if (isRefreshing) return;
+    setRotation(prev => prev + 360);
+    setIsRefreshing(true);
+    await queryClient.invalidateQueries({ queryKey: ["files"] });
+    setTimeout(() => setIsRefreshing(false), 300);
+  }, [isRefreshing, queryClient]);
 
   const selectedCount = selectedItems.size;
 
@@ -77,7 +90,7 @@ export function FileTable() {
   const handleBatchDownload = async () => {
     const keys = Array.from(selectedItems);
     for (const key of keys) {
-      const result = await linkMutation.mutateAsync({ key });
+      const result = await linkMutation.mutateAsync({ key, bucketId: currentBucketId });
       if (result.url) {
         window.open(result.url, "_blank");
       }
@@ -86,50 +99,23 @@ export function FileTable() {
 
   const handleBatchDelete = () => {
     const keys = Array.from(selectedItems);
-    if (confirm(`${t("files.confirmDeleteSelected")}`)) {
-      startDelete(keys);
-      clearSelection();
-    }
+    if (keys.length === 0) return;
+    startDelete(keys);
+    clearSelection();
   };
 
-  const handleBatchMove = async () => {
+  const handleBatchMove = () => {
     const keys = Array.from(selectedItems);
     if (keys.length === 0) return;
-    
-    const targetPath = prompt(`${t("files.selectFolder")}:`, "");
-    if (!targetPath && targetPath !== "") return;
-    
-    try {
-      for (const key of keys) {
-        const name = key.split("/").filter(Boolean).pop() || "";
-        const isFolder = key.endsWith("/");
-        const destKey = (targetPath || "") + name + (isFolder ? "/" : "");
-        await moveMutation.mutateAsync({ sourceKey: key, destKey });
-      }
-      clearSelection();
-    } catch (error) {
-      console.error("Batch move failed:", error);
-    }
+    openBatchMoveDialog(keys);
+    clearSelection();
   };
 
-  const handleBatchCopy = async () => {
+  const handleBatchCopy = () => {
     const keys = Array.from(selectedItems);
     if (keys.length === 0) return;
-    
-    const targetPath = prompt(`${t("files.selectFolder")}:`, "");
-    if (!targetPath && targetPath !== "") return;
-    
-    try {
-      for (const key of keys) {
-        const name = key.split("/").filter(Boolean).pop() || "";
-        const isFolder = key.endsWith("/");
-        const destKey = (targetPath || "") + name + (isFolder ? "/" : "");
-        await copyMutation.mutateAsync({ sourceKey: key, destKey });
-      }
-      clearSelection();
-    } catch (error) {
-      console.error("Batch copy failed:", error);
-    }
+    openBatchCopyDialog(keys);
+    clearSelection();
   };
 
   return (
@@ -144,7 +130,7 @@ export function FileTable() {
           disabled={pathStack.length === 0}
           className="h-8 w-8 rounded-lg disabled:opacity-50"
         >
-          <Home className="h-4 w-4" />
+          <HardDrive className="h-4 w-4" />
         </Button>
 
         <div className="flex items-center gap-1 text-sm text-text-quaternary overflow-x-auto flex-1">
@@ -182,6 +168,17 @@ export function FileTable() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="h-9 w-9 rounded-md border border-border-subtle text-text-secondary hover:text-text-primary hover:bg-hover-bg transition-colors flex items-center justify-center disabled:opacity-50"
+            title={t("files.refresh") || "Refresh"}
+          >
+            <RotateCw 
+              className="h-4 w-4 transition-transform duration-500 ease-out" 
+              style={{ transform: `rotate(${rotation}deg)` }}
+            />
+          </button>
           <div className="flex items-center gap-1 p-1 bg-surface-elevated rounded-lg border border-border-subtle">
             <button
               onClick={() => setViewMode("grid")}
@@ -288,7 +285,7 @@ export function FileTable() {
         ref={containerRef}
         className="flex-1 overflow-auto p-4 will-change-transform bg-bg-marketing relative select-none"
       >
-        {isLoading ? (
+        {isLoading || isRefreshing ? (
           <div 
             className="grid gap-4"
             style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}
@@ -391,7 +388,13 @@ export function FileTable() {
 
       <NewFolderDialog open={newFolderOpen} onOpenChange={closeNewFolderDialog} />
       <RenameDialog open={!!renameItem} onOpenChange={closeRenameDialog} item={renameItem} />
-      <MoveCopyDialog open={!!moveCopyItem} onOpenChange={closeMoveCopyDialog} item={moveCopyItem} mode={moveCopyMode} />
+      <MoveCopyDialog 
+        open={!!moveCopyItem || batchMoveCopyItems.length > 0} 
+        onOpenChange={closeMoveCopyDialog} 
+        item={moveCopyItem} 
+        mode={moveCopyMode} 
+        batchItems={batchMoveCopyItems}
+      />
       <DeleteProgressDialog open={deleteDialogOpen} onOpenChange={closeDeleteDialog} items={deleteItems} />
     </div>
   );

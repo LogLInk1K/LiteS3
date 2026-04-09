@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   try {
     await ensureDatabase();
     
-    const { key } = await request.json();
+    const { key, bucketId } = await request.json();
 
     if (!key) {
       return NextResponse.json({ error: "key is required" }, { status: 400 });
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 
     const folderKey = key.endsWith("/") ? key : key + "/";
     
-    await uploadObject(bucket.id, folderKey, new Uint8Array(0), "application/x-directory");
+    await uploadObject(bucketId || bucket.id, folderKey, new Uint8Array(0), "application/x-directory");
     
     return NextResponse.json({ success: true });
   } catch (error: any) {

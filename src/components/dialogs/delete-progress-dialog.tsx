@@ -2,13 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useTranslation } from "@/hooks/use-translation";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Trash2, Check, Loader2 } from "lucide-react";
+import { useFileStore } from "@/store/file-store";
+import { useQueryClient } from "@tanstack/react-query";
+import { Trash2, Check, Loader2, AlertTriangle } from "lucide-react";
 
 interface DeleteProgressDialogProps {
   open: boolean;
@@ -19,137 +15,156 @@ interface DeleteProgressDialogProps {
 
 export function DeleteProgressDialog({ open, onOpenChange, items, onComplete }: DeleteProgressDialogProps) {
   const { t } = useTranslation();
-  const [status, setStatus] = useState<"deleting" | "complete" | "error">("deleting");
+  const { currentBucketId } = useFileStore();
+  const queryClient = useQueryClient();
+  const [status, setStatus] = useState<"confirm" | "deleting" | "complete" | "error">("confirm");
   const [deletedCount, setDeletedCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!open || items.length === 0) return;
-
-    const deleteItems = async () => {
-      setStatus("deleting");
+    if (open) {
+      setStatus("confirm");
       setDeletedCount(0);
       setError(null);
+    }
+  }, [open]);
 
-      let successCount = 0;
-      
-      for (let i = 0; i < items.length; i++) {
-        try {
-          const res = await fetch(`/api/files/delete?key=${encodeURIComponent(items[i])}`, {
-            method: "DELETE",
-          });
-          
-          if (res.ok) {
-            const data = await res.json();
-            successCount += data.deleted || 1;
-          } else {
-            const data = await res.json().catch(() => ({}));
-            throw new Error(data.error || "Delete failed");
-          }
-          
-          setDeletedCount(successCount);
-        } catch (err) {
-          console.error(`Failed to delete ${items[i]}:`, err);
-        }
-      }
-
-      setStatus("complete");
-      onComplete?.();
-    };
-
+  const handleConfirm = () => {
+    setStatus("deleting");
     deleteItems();
-  }, [open, items, onComplete]);
+  };
+
+  const deleteItems = async () => {
+    if (items.length === 0) return;
+
+    let successCount = 0;
+    
+    for (let i = 0; i < items.length; i++) {
+      try {
+        const url = new URL("/api/files/delete", window.location.origin);
+        url.searchParams.set("key", items[i]);
+        if (currentBucketId) {
+          url.searchParams.set("bucketId", currentBucketId);
+        }
+        const res = await fetch(url.toString(), {
+          method: "DELETE",
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          successCount += data.deleted || 1;
+        } else {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || "Delete failed");
+        }
+        
+        setDeletedCount(successCount);
+      } catch (err) {
+        console.error(`Failed to delete ${items[i]}:`, err);
+      }
+    }
+
+    setStatus("complete");
+    queryClient.invalidateQueries({ queryKey: ["files"] });
+    onComplete?.();
+  };
 
   const handleClose = () => {
-    if (status === "complete") {
+    if (status !== "deleting") {
       onOpenChange(false);
     }
   };
 
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {status === "deleting" ? (
-              <>
+    <div className="fixed inset-0 bg-overlay-primary backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="w-full max-w-sm bg-bg-panel rounded-xl border border-border-subtle p-6">
+        <div className="flex items-center gap-3 mb-6">
+          {status === "confirm" ? (
+            <>
+              <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+              </div>
+              <div>
+                <h2 className="text-base font-medium text-text-primary">{t("files.confirmDelete")}</h2>
+                <p className="text-sm text-text-tertiary">{items.length} {t("files.itemsSelected")}</p>
+              </div>
+            </>
+          ) : status === "deleting" ? (
+            <>
+              <div className="w-10 h-10 rounded-lg bg-brand-indigo/10 flex items-center justify-center">
                 <Loader2 className="h-5 w-5 animate-spin text-brand-indigo" />
-                {t("files.deleting")}
-              </>
-            ) : status === "complete" ? (
-              <>
-                <Check className="h-5 w-5 text-green-500" />
-                {t("files.deleteComplete")}
-              </>
-            ) : (
-              <>
+              </div>
+              <div>
+                <h2 className="text-base font-medium text-text-primary">{t("files.deleting")}</h2>
+                <p className="text-sm text-text-tertiary">{t("files.deleteProgress")}</p>
+              </div>
+            </>
+          ) : status === "complete" ? (
+            <>
+              <div className="w-10 h-10 rounded-lg bg-success-green/10 flex items-center justify-center">
+                <Check className="h-5 w-5 text-success-green" />
+              </div>
+              <div>
+                <h2 className="text-base font-medium text-text-primary">{t("files.deleteComplete")}</h2>
+                <p className="text-sm text-text-tertiary">{deletedCount} {t("files.itemsDeleted")}</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
                 <Trash2 className="h-5 w-5 text-destructive" />
-                {t("files.operationFailed")}
-              </>
-            )}
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="py-6">
-          {status === "deleting" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-center">
-                <div className="relative w-32 h-32">
-                  <svg className="w-full h-full transform -rotate-90">
-                    <circle
-                      cx="64"
-                      cy="64"
-                      r="56"
-                      stroke="currentColor"
-                      strokeWidth="8"
-                      fill="none"
-                      className="text-border-subtle"
-                    />
-                    <circle
-                      cx="64"
-                      cy="64"
-                      r="56"
-                      stroke="currentColor"
-                      strokeWidth="8"
-                      fill="none"
-                      strokeLinecap="round"
-                      className="text-brand-indigo transition-all duration-300"
-                      strokeDasharray={`${(deletedCount / items.length) * 352} 352`}
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-2xl font-medium text-text-primary">
-                      {Math.round((deletedCount / items.length) * 100) || 0}%
-                    </span>
-                  </div>
-                </div>
               </div>
-              <p className="text-center text-sm text-text-secondary">
-                {t("files.deleteProgress")}: {deletedCount} / {items.length}
-              </p>
-            </div>
-          )}
-          
-          {status === "complete" && (
-            <div className="text-center space-y-4">
-              <div className="flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
-                  <Check className="h-8 w-8 text-green-500" />
-                </div>
+              <div>
+                <h2 className="text-base font-medium text-text-primary">{t("files.operationFailed")}</h2>
+                <p className="text-sm text-destructive">{error}</p>
               </div>
-              <p className="text-text-primary">
-                {deletedCount} {t("files.itemsDeleted")}
-              </p>
-            </div>
-          )}
-          
-          {status === "error" && (
-            <div className="text-center space-y-4">
-              <p className="text-destructive">{error}</p>
-            </div>
+            </>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+        
+        {status === "confirm" && (
+          <div className="flex gap-3">
+            <button
+              onClick={handleClose}
+              className="flex-1 px-4 py-2 rounded-lg bg-hover-bg text-text-secondary font-medium hover:bg-surface-elevated transition-colors"
+            >
+              {t("files.cancel")}
+            </button>
+            <button
+              onClick={handleConfirm}
+              className="flex-1 px-4 py-2 rounded-lg bg-destructive text-white font-medium hover:bg-destructive/90 transition-colors"
+            >
+              {t("files.delete")}
+            </button>
+          </div>
+        )}
+        
+        {status === "deleting" && (
+          <div className="space-y-3">
+            <div className="h-1.5 bg-hover-bg rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-brand-indigo rounded-full transition-all duration-300"
+                style={{ width: `${Math.round((deletedCount / items.length) * 100) || 0}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-text-tertiary">{deletedCount} / {items.length}</span>
+              <span className="text-text-secondary font-medium">{Math.round((deletedCount / items.length) * 100) || 0}%</span>
+            </div>
+          </div>
+        )}
+        
+        {status === "complete" && (
+          <button
+            onClick={handleClose}
+            className="w-full px-4 py-2 rounded-lg bg-brand-indigo text-white font-medium hover:bg-accent-violet transition-colors"
+          >
+            {t("files.confirm") || "确定"}
+          </button>
+        )}
+      </div>
+    </div>
   );
 }

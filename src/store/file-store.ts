@@ -17,6 +17,7 @@ export interface FolderItem {
 export type FileOrFolder = FileItem | FolderItem;
 
 interface FileStore {
+  currentBucketId: string | null;
   currentPrefix: string;
   pathStack: string[];
   searchQuery: string;
@@ -28,10 +29,12 @@ interface FileStore {
   renameItem: FileOrFolder | null;
   moveCopyItem: FileOrFolder | null;
   moveCopyMode: "move" | "copy";
+  batchMoveCopyItems: string[];
   newFolderOpen: boolean;
   deleteItems: string[];
   deleteDialogOpen: boolean;
 
+  setCurrentBucketId: (bucketId: string) => void;
   setCurrentPrefix: (prefix: string) => void;
   navigateToFolder: (folderKey: string) => void;
   navigateUp: () => void;
@@ -48,6 +51,8 @@ interface FileStore {
   closeRenameDialog: () => void;
   openMoveDialog: (item: FileOrFolder) => void;
   openCopyDialog: (item: FileOrFolder) => void;
+  openBatchMoveDialog: (items: string[]) => void;
+  openBatchCopyDialog: (items: string[]) => void;
   closeMoveCopyDialog: () => void;
   openNewFolderDialog: () => void;
   closeNewFolderDialog: () => void;
@@ -56,6 +61,7 @@ interface FileStore {
 }
 
 export const useFileStore = create<FileStore>((set, get) => ({
+  currentBucketId: null,
   currentPrefix: "",
   pathStack: [],
   searchQuery: "",
@@ -67,10 +73,19 @@ export const useFileStore = create<FileStore>((set, get) => ({
   renameItem: null,
   moveCopyItem: null,
   moveCopyMode: "move",
+  batchMoveCopyItems: [],
   newFolderOpen: false,
   deleteItems: [],
   deleteDialogOpen: false,
 
+  setCurrentBucketId: (bucketId) => set({
+    currentBucketId: bucketId,
+    currentPrefix: "",
+    pathStack: [],
+    selectedItems: new Set<string>(),
+    previewItem: null,
+    currentPage: 1,
+  }),
   setCurrentPrefix: (prefix) => set({ currentPrefix: prefix }),
 
   navigateToFolder: (folderKey) => {
@@ -126,9 +141,11 @@ export const useFileStore = create<FileStore>((set, get) => ({
   openRenameDialog: (item) => set({ renameItem: item, contextMenu: null }),
   closeRenameDialog: () => set({ renameItem: null }),
   
-  openMoveDialog: (item) => set({ moveCopyItem: item, moveCopyMode: "move", contextMenu: null }),
-  openCopyDialog: (item) => set({ moveCopyItem: item, moveCopyMode: "copy", contextMenu: null }),
-  closeMoveCopyDialog: () => set({ moveCopyItem: null }),
+  openMoveDialog: (item) => set({ moveCopyItem: item, moveCopyMode: "move", batchMoveCopyItems: [], contextMenu: null }),
+  openCopyDialog: (item) => set({ moveCopyItem: item, moveCopyMode: "copy", batchMoveCopyItems: [], contextMenu: null }),
+  openBatchMoveDialog: (items) => set({ moveCopyItem: null, moveCopyMode: "move", batchMoveCopyItems: items, contextMenu: null }),
+  openBatchCopyDialog: (items) => set({ moveCopyItem: null, moveCopyMode: "copy", batchMoveCopyItems: items, contextMenu: null }),
+  closeMoveCopyDialog: () => set({ moveCopyItem: null, batchMoveCopyItems: [] }),
   
   openNewFolderDialog: () => set({ newFolderOpen: true }),
   closeNewFolderDialog: () => set({ newFolderOpen: false }),

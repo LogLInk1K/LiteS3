@@ -36,9 +36,7 @@ export function ContextMenu() {
 
   const handleDelete = () => {
     closeContextMenu();
-    if (confirm(`${t("files.confirmDelete")} ${item.name}？`)) {
-      startDelete([item.key]);
-    }
+    startDelete([item.key]);
   };
 
   const handleCopyLink = async () => {
