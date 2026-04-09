@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { SignInForm } from "@/components/sign-in-form";
 import { ThemeMenu } from "@/components/theme-menu";
+import { SignInHeader } from "@/components/sign-in-header";
 
 export default async function SignInPage() {
   const session = await getServerSession(authOptions);
@@ -20,10 +21,7 @@ export default async function SignInPage() {
           <div className="h-14 w-14 rounded-xl bg-brand-indigo flex items-center justify-center">
             <span className="text-white font-medium text-xl">S3</span>
           </div>
-          <div className="text-center">
-            <h1 className="text-2xl font-medium text-text-primary" style={{ letterSpacing: "-0.704px" }}>S3 Manager</h1>
-            <p className="text-text-tertiary text-sm mt-1.5">个人文件管理系统</p>
-          </div>
+          <SignInHeader />
         </div>
         <div className="bg-surface-elevated rounded-xl border border-border-subtle p-6">
           <SignInForm />

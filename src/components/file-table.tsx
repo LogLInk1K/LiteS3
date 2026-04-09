@@ -7,6 +7,7 @@ import { FileListItem } from "./file-list-item";
 import { LayoutGrid, List, ChevronRight, ChevronLeft, Home, Loader2, Upload } from "lucide-react";
 import { Button } from "./ui/button";
 import { useRef } from "react";
+import { useTranslation } from "@/hooks/use-translation";
 
 const PAGE_SIZE = 30;
 
@@ -17,6 +18,7 @@ export function FileTable() {
   } = useFileStore();
   const { data, isLoading, error } = useFiles(currentPrefix);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { t } = useTranslation();
 
   const allItems: FileOrFolder[] = [
     ...(data?.folders || []),
@@ -117,7 +119,7 @@ export function FileTable() {
             className="flex items-center gap-1.5 px-3 h-9 rounded-md bg-brand-indigo text-white text-sm font-medium hover:bg-accent-violet transition-colors"
           >
             <Upload className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Upload</span>
+            <span className="hidden sm:inline">{t("common.upload")}</span>
           </button>
         </div>
       </div>
@@ -136,8 +138,8 @@ export function FileTable() {
           </div>
         ) : filteredItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-text-quaternary">
-            <p className="text-lg text-text-tertiary">Empty folder</p>
-            <p className="text-sm mt-1">Drag and drop files to upload</p>
+            <p className="text-lg text-text-tertiary">{t("files.emptyFolder")}</p>
+            <p className="text-sm mt-1">{t("files.dragDrop")}</p>
           </div>
         ) : viewMode === "grid" ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
@@ -150,9 +152,9 @@ export function FileTable() {
             <div className="flex items-center gap-3 px-3 py-2 text-xs text-text-quaternary border-b border-border-subtle">
               <div className="w-4" />
               <div className="h-5 w-5" />
-              <span className="flex-1">Name</span>
-              <span className="w-20 text-right">Size</span>
-              <span className="w-36 text-right">Modified</span>
+              <span className="flex-1">{t("files.name")}</span>
+              <span className="w-20 text-right">{t("files.size")}</span>
+              <span className="w-36 text-right">{t("files.modified")}</span>
             </div>
             {pagedItems.map((item) => (
               <FileListItem key={item.key} item={item} />
@@ -164,7 +166,7 @@ export function FileTable() {
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-4 py-2 border-t border-border-subtle bg-bg-panel">
           <span className="text-xs text-text-quaternary">
-            {filteredItems.length} items, page {safePage}/{totalPages}
+            {filteredItems.length} {t("files.items")}, {t("files.page")} {safePage}/{totalPages}
           </span>
           <div className="flex items-center gap-1">
             <Button

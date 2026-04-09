@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Database, User, Check, AlertCircle, Loader2 } from "lucide-react";
 import { ThemeMenu } from "@/components/theme-menu";
+import { useTranslation } from "@/hooks/use-translation";
 
 type Step = "database" | "admin" | "complete";
 
@@ -19,6 +20,7 @@ interface AdminConfig {
 }
 
 export default function SetupPage() {
+  const { t } = useTranslation();
   const [step, setStep] = useState<Step>("database");
   const [dbConfig, setDbConfig] = useState<DatabaseConfig>({
     driver: "sqlite",
@@ -132,10 +134,10 @@ export default function SetupPage() {
       <div className="w-full max-w-xl">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-medium text-text-primary tracking-tight mb-2">
-            S3 Manager Setup
+            {t("setup.title")}
           </h1>
           <p className="text-text-tertiary">
-            Configure your storage management system
+            {t("setup.subtitle")}
           </p>
         </div>
 
@@ -220,6 +222,8 @@ function DatabaseStep({
   onNext: () => void;
   loading: boolean;
 }) {
+  const { t } = useTranslation();
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
@@ -227,8 +231,8 @@ function DatabaseStep({
           <Database className="w-5 h-5 text-brand-indigo" />
         </div>
         <div>
-          <h2 className="text-lg font-medium text-text-primary">Database Configuration</h2>
-          <p className="text-sm text-text-tertiary">Verify your database connection</p>
+          <h2 className="text-lg font-medium text-text-primary">{t("setup.databaseConfig")}</h2>
+          <p className="text-sm text-text-tertiary">{t("setup.verifyConnection")}</p>
         </div>
       </div>
 
@@ -236,16 +240,16 @@ function DatabaseStep({
         <div className="p-4 rounded-lg bg-hover-bg border border-border-standard">
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-text-quaternary">Driver:</span>
+              <span className="text-text-quaternary">{t("setup.driver")}:</span>
               <span className="text-text-secondary ml-2">{config.driver.toUpperCase()}</span>
             </div>
             <div>
-              <span className="text-text-quaternary">URL:</span>
+              <span className="text-text-quaternary">{t("setup.url")}:</span>
               <span className="text-text-secondary ml-2 font-mono text-xs">{config.url}</span>
             </div>
           </div>
           <p className="text-xs text-text-quaternary mt-3">
-            Database configuration is loaded from environment variables. To change it, update your .env.local file.
+            {t("setup.configNote")}
           </p>
         </div>
       </div>
@@ -259,10 +263,10 @@ function DatabaseStep({
           {loading ? (
             <span className="flex items-center justify-center gap-2">
               <Loader2 className="w-4 h-4 animate-spin" />
-              Testing...
+              {t("setup.testing")}
             </span>
           ) : (
-            "Test Connection"
+            t("setup.testConnection")
           )}
         </button>
         <button
@@ -270,14 +274,14 @@ function DatabaseStep({
           disabled={!connectionTested || loading}
           className="flex-1 px-4 py-2 rounded-lg bg-brand-indigo text-white font-medium hover:bg-accent-violet transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Continue
+          {t("setup.continue")}
         </button>
       </div>
 
       {connectionTested && (
         <div className="flex items-center gap-2 text-success-green text-sm">
           <Check className="w-4 h-4" />
-          Connection successful
+          {t("setup.connectionSuccessful")}
         </div>
       )}
     </div>
@@ -297,6 +301,8 @@ function AdminStep({
   onSubmit: () => void;
   loading: boolean;
 }) {
+  const { t } = useTranslation();
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
@@ -304,14 +310,14 @@ function AdminStep({
           <User className="w-5 h-5 text-brand-indigo" />
         </div>
         <div>
-          <h2 className="text-lg font-medium text-text-primary">Create Admin Account</h2>
-          <p className="text-sm text-text-tertiary">Set up your administrator credentials</p>
+          <h2 className="text-lg font-medium text-text-primary">{t("setup.createAdmin")}</h2>
+          <p className="text-sm text-text-tertiary">{t("setup.adminCredentials")}</p>
         </div>
       </div>
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-text-secondary mb-2">Username</label>
+          <label className="block text-sm font-medium text-text-secondary mb-2">{t("auth.username")}</label>
           <input
             type="text"
             value={config.username}
@@ -321,7 +327,7 @@ function AdminStep({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-text-secondary mb-2">Email (optional)</label>
+          <label className="block text-sm font-medium text-text-secondary mb-2">{t("setup.email")}</label>
           <input
             type="email"
             value={config.email}
@@ -331,7 +337,7 @@ function AdminStep({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-text-secondary mb-2">Password</label>
+          <label className="block text-sm font-medium text-text-secondary mb-2">{t("auth.password")}</label>
           <input
             type="password"
             value={config.password}
@@ -341,7 +347,7 @@ function AdminStep({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-text-secondary mb-2">Confirm Password</label>
+          <label className="block text-sm font-medium text-text-secondary mb-2">{t("setup.confirmPassword")}</label>
           <input
             type="password"
             value={config.confirmPassword}
@@ -357,7 +363,7 @@ function AdminStep({
           onClick={onBack}
           className="flex-1 px-4 py-2 rounded-lg bg-hover-bg text-text-secondary font-medium hover:bg-surface-elevated transition-colors"
         >
-          Back
+          {t("setup.back")}
         </button>
         <button
           onClick={onSubmit}
@@ -367,10 +373,10 @@ function AdminStep({
           {loading ? (
             <span className="flex items-center justify-center gap-2">
               <Loader2 className="w-4 h-4 animate-spin" />
-              Initializing...
+              {t("setup.initializing")}
             </span>
           ) : (
-            "Complete Setup"
+            t("setup.completeSetup")
           )}
         </button>
       </div>
@@ -379,20 +385,22 @@ function AdminStep({
 }
 
 function CompleteStep({ onComplete }: { onComplete: () => void }) {
+  const { t } = useTranslation();
+  
   return (
     <div className="text-center py-8">
       <div className="w-16 h-16 rounded-full bg-success-green flex items-center justify-center mx-auto mb-4">
         <Check className="w-8 h-8 text-white" />
       </div>
-      <h2 className="text-xl font-medium text-text-primary mb-2">Setup Complete!</h2>
+      <h2 className="text-xl font-medium text-text-primary mb-2">{t("setup.setupComplete")}</h2>
       <p className="text-text-tertiary mb-6">
-        Your S3 Manager is ready to use. Click below to sign in.
+        {t("setup.ready")}
       </p>
       <button
         onClick={onComplete}
         className="px-6 py-2 rounded-lg bg-brand-indigo text-white font-medium hover:bg-accent-violet transition-colors"
       >
-        Go to Sign In
+        {t("setup.goToSignIn")}
       </button>
     </div>
   );

@@ -6,9 +6,11 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LogIn, Loader2 } from "lucide-react";
+import { useTranslation } from "@/hooks/use-translation";
 
 export function SignInForm() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -27,13 +29,13 @@ export function SignInForm() {
       });
 
       if (result?.error) {
-        setError("用户名或密码错误");
+        setError(t("auth.invalidCredentials"));
       } else {
         router.push("/");
         router.refresh();
       }
     } catch {
-      setError("登录失败，请重试");
+      setError(t("auth.signInFailed"));
     } finally {
       setLoading(false);
     }
@@ -44,7 +46,7 @@ export function SignInForm() {
       <div className="space-y-3">
         <Input
           type="text"
-          placeholder="用户名"
+          placeholder={t("auth.username")}
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           required
@@ -52,7 +54,7 @@ export function SignInForm() {
         />
         <Input
           type="password"
-          placeholder="密码"
+          placeholder={t("auth.password")}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -75,7 +77,7 @@ export function SignInForm() {
         ) : (
           <LogIn className="h-4 w-4" />
         )}
-        登录
+        {t("auth.signIn")}
       </Button>
     </form>
   );

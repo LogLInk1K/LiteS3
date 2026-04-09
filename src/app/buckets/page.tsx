@@ -14,6 +14,7 @@ import {
   MoreVertical,
   ArrowLeft,
 } from "lucide-react";
+ import { useTranslation } from "@/hooks/use-translation";
 
 interface Bucket {
   id: string;
@@ -46,6 +47,7 @@ const initialFormData: BucketFormData = {
 };
 
 export default function BucketsPage() {
+  const { t } = useTranslation();
   const [buckets, setBuckets] = useState<Bucket[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -174,8 +176,8 @@ export default function BucketsPage() {
               <ArrowLeft className="w-5 h-5 text-text-tertiary" />
             </Link>
             <div>
-              <h1 className="text-2xl font-medium text-text-primary tracking-tight">Storage Buckets</h1>
-              <p className="text-text-tertiary mt-1">Manage your S3-compatible storage configurations</p>
+              <h1 className="text-2xl font-medium text-text-primary tracking-tight">{t("buckets.title")}</h1>
+              <p className="text-text-tertiary mt-1">{t("buckets.subtitle")}</p>
             </div>
           </div>
           <button
@@ -187,7 +189,7 @@ export default function BucketsPage() {
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-indigo text-white font-medium hover:bg-accent-violet transition-colors"
           >
             <Plus className="w-4 h-4" />
-            Add Bucket
+            {t("buckets.addBucket")}
           </button>
         </div>
 
@@ -205,8 +207,8 @@ export default function BucketsPage() {
         ) : buckets.length === 0 ? (
           <div className="text-center py-12 bg-bg-panel rounded-xl border border-border-subtle">
             <Server className="w-12 h-12 text-text-quaternary mx-auto mb-4" />
-            <p className="text-text-tertiary">No storage buckets configured yet</p>
-            <p className="text-text-quaternary text-sm mt-1">Click "Add Bucket" to get started</p>
+            <p className="text-text-tertiary">{t("buckets.noBucketsConfigured")}</p>
+            <p className="text-text-quaternary text-sm mt-1">{t("buckets.clickAddBucket")}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -225,7 +227,7 @@ export default function BucketsPage() {
                         <span className="text-text-primary font-medium">{bucket.name}</span>
                         {bucket.isDefault && (
                           <span className="px-2 py-0.5 rounded-full bg-brand-indigo text-white text-xs font-medium">
-                            Default
+                            {t("buckets.default")}
                           </span>
                         )}
                       </div>
@@ -251,7 +253,7 @@ export default function BucketsPage() {
                             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-hover-bg transition-colors"
                           >
                             <Star className="w-4 h-4" />
-                            Set as Default
+                            {t("buckets.setAsDefault")}
                           </button>
                         )}
                         <button
@@ -259,7 +261,7 @@ export default function BucketsPage() {
                           className="w-full flex items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
-                          Delete
+                          {t("buckets.delete")}
                         </button>
                       </div>
                     )}
@@ -273,12 +275,12 @@ export default function BucketsPage() {
         {showForm && (
           <div className="fixed inset-0 bg-overlay-primary flex items-center justify-center p-4 z-50">
             <div className="w-full max-w-lg bg-bg-panel rounded-xl border border-border-subtle p-6">
-              <h2 className="text-xl font-medium text-text-primary mb-6">Add Storage Bucket</h2>
+              <h2 className="text-xl font-medium text-text-primary mb-6">{t("buckets.addStorageBucket")}</h2>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-text-secondary mb-2">
-                    Display Name
+                    {t("buckets.displayName")}
                   </label>
                   <input
                     type="text"
@@ -293,7 +295,7 @@ export default function BucketsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-text-secondary mb-2">
-                      Endpoint
+                      {t("buckets.endpoint")}
                     </label>
                     <input
                       type="text"
@@ -306,7 +308,7 @@ export default function BucketsPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-text-secondary mb-2">
-                      Region
+                      {t("buckets.region")}
                     </label>
                     <input
                       type="text"
@@ -320,7 +322,7 @@ export default function BucketsPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-text-secondary mb-2">
-                    Bucket Name
+                    {t("buckets.bucketName")}
                   </label>
                   <input
                     type="text"
@@ -335,7 +337,7 @@ export default function BucketsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-text-secondary mb-2">
-                      Access Key ID
+                      {t("buckets.accessKeyId")}
                     </label>
                     <input
                       type="text"
@@ -348,7 +350,7 @@ export default function BucketsPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-text-secondary mb-2">
-                      Secret Access Key
+                      {t("buckets.secretAccessKey")}
                     </label>
                     <input
                       type="password"
@@ -363,7 +365,7 @@ export default function BucketsPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-text-secondary mb-2">
-                    Public URL (optional)
+                    {t("buckets.publicUrl")}
                   </label>
                   <input
                     type="text"
@@ -401,10 +403,10 @@ export default function BucketsPage() {
                     {formLoading ? (
                       <span className="flex items-center justify-center gap-2">
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        Testing...
+                        {t("buckets.testing")}
                       </span>
                     ) : (
-                      "Test Connection"
+                      t("setup.testConnection")
                     )}
                   </button>
                   <button
@@ -412,7 +414,7 @@ export default function BucketsPage() {
                     disabled={formLoading || !testResult?.success}
                     className="flex-1 px-4 py-2 rounded-lg bg-brand-indigo text-white font-medium hover:bg-accent-violet transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Save Bucket
+                    {t("buckets.saveBucket")}
                   </button>
                 </div>
 
@@ -425,7 +427,7 @@ export default function BucketsPage() {
                   }}
                   className="w-full px-4 py-2 rounded-lg text-text-tertiary hover:text-text-secondary transition-colors"
                 >
-                  Cancel
+                  {t("buckets.cancel")}
                 </button>
               </form>
             </div>

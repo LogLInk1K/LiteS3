@@ -6,9 +6,11 @@ import { Search } from "lucide-react";
 import Link from "next/link";
 import { BucketSelector } from "./bucket-selector";
 import { UserMenu } from "./user-menu";
+import { useTranslation } from "@/hooks/use-translation";
 
 export function Navbar() {
   const { searchQuery, setSearchQuery } = useFileStore();
+  const { t } = useTranslation();
 
   return (
     <header className="sticky top-0 z-30 flex items-center gap-3 px-4 py-3 border-b border-border-subtle bg-bg-panel/95 backdrop-blur supports-backdrop-filter:bg-bg-panel/60">
@@ -25,7 +27,7 @@ export function Navbar() {
       <div className="flex-1 max-w-md mx-auto relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-quaternary" />
         <Input
-          placeholder="Search files..."
+          placeholder={t("common.search")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-9 h-9 bg-hover-bg border-border-subtle text-text-primary placeholder:text-text-quaternary focus:border-brand-indigo"
