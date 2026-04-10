@@ -131,7 +131,7 @@ export function FileTable() {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="grid grid-rows-[auto_auto_1fr_auto] h-full max-h-full min-h-0">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border-subtle bg-bg-panel">
         <Button
           variant="ghost"
@@ -347,7 +347,7 @@ export function FileTable() {
 
       <div 
         ref={containerRef}
-        className="flex-1 overflow-auto p-4 will-change-transform bg-bg-marketing relative select-none"
+        className="flex-1 overflow-y-auto p-4 will-change-transform bg-bg-marketing relative select-none min-h-0"
       >
         {isLoading || isRefreshing ? (
           <div 

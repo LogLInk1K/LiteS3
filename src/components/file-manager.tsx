@@ -65,8 +65,10 @@ export function FileManager() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-bg-marketing">
-      <FileTable />
+    <div className="flex flex-col h-screen bg-bg-marketing overflow-hidden">
+      <div className="flex-1 overflow-hidden">
+        <FileTable />
+      </div>
       <DropZone />
       <FilePreview />
       <ContextMenu />
