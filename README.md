@@ -12,6 +12,14 @@ A simple and efficient personal object storage file manager.
 
 - English | [中文](./README_CN.md)
 
+## Screenshot
+
+![Screenshot1](screenshot/LiteS3-1.webp)
+
+![Screenshot2](screenshot/LiteS3-2.webp)
+
+![Screenshot3](screenshot/LiteS3-3.webp)
+
 ## What is LiteS3?
 
 LiteS3 is a self-hosted file management interface for any S3-compatible object storage service. Whether you use Cloudflare R2, AWS S3, MinIO, or anything else — LiteS3 gives you a clean, modern web UI to browse, upload, and manage your files.

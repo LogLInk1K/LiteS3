@@ -6,11 +6,19 @@
 
 # LiteS3
 
-简洁高效的个人对象存储文件管理系统。
+一个简洁高效的个人对象存储文件管理系统，支持所有 S3 兼容存储服务（Cloudflare R2、AWS S3、MinIO 等）。
 
 ---
 
 - [English](./README.md) | 中文 
+
+## 截图
+
+![截图1](screenshot/LiteS3-1.webp)
+
+![截图2](screenshot/LiteS3-2.webp)
+
+![截图3](screenshot/LiteS3-3.webp)
 
 ## 什么是 LiteS3？
 
