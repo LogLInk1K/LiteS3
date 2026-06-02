@@ -85,6 +85,6 @@ LiteS3 适用于任何 S3 兼容的存储。常见 Endpoint：
 
 Next.js 16 · React 19 · Tailwind CSS 4 · Drizzle ORM · NextAuth.js · AWS S3 SDK
 
-## 开源协议
+## 许可证
 
 [AGPL-3.0](LICENSE)
