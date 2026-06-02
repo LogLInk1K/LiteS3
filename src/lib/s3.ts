@@ -320,6 +320,23 @@ export async function headObject(bucketId: string, key: string) {
   return client.send(command);
 }
 
+export async function getObjectContent(bucketId: string, key: string): Promise<{ body: string; contentType: string | undefined }> {
+  const config = await getBucketConfig(bucketId);
+  if (!config) throw new Error("Bucket not found");
+  
+  const client = createS3Client(config);
+  const command = new GetObjectCommand({
+    Bucket: config.bucketName,
+    Key: key,
+  });
+  
+  const response = await client.send(command);
+  const contentType = response.ContentType;
+  const body = await response.Body?.transformToString();
+  
+  return { body: body || "", contentType };
+}
+
 export async function copyObject(bucketId: string, sourceKey: string, destKey: string) {
   const config = await getBucketConfig(bucketId);
   if (!config) throw new Error("Bucket not found");

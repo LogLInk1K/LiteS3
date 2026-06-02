@@ -2,21 +2,155 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useFileStore, FileItem } from "@/store/file-store";
-import { useFileLink } from "@/hooks/use-files";
 import { isImageFile, isVideoFile, isAudioFile, isCodeFile, isMarkdownFile, isTextFile, getFileExtension } from "@/lib/utils";
 import { Loader2, X, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import js from "react-syntax-highlighter/dist/esm/languages/hljs/javascript";
+import ts from "react-syntax-highlighter/dist/esm/languages/hljs/typescript";
+import jsx from "react-syntax-highlighter/dist/esm/languages/hljs/javascript";
+import tsx from "react-syntax-highlighter/dist/esm/languages/hljs/typescript";
+import py from "react-syntax-highlighter/dist/esm/languages/hljs/python";
+import rb from "react-syntax-highlighter/dist/esm/languages/hljs/ruby";
+import go from "react-syntax-highlighter/dist/esm/languages/hljs/go";
+import rs from "react-syntax-highlighter/dist/esm/languages/hljs/rust";
+import java from "react-syntax-highlighter/dist/esm/languages/hljs/java";
+import c from "react-syntax-highlighter/dist/esm/languages/hljs/c-like";
+import cpp from "react-syntax-highlighter/dist/esm/languages/hljs/cpp";
+import cs from "react-syntax-highlighter/dist/esm/languages/hljs/csharp";
+import php from "react-syntax-highlighter/dist/esm/languages/hljs/php";
+import swift from "react-syntax-highlighter/dist/esm/languages/hljs/swift";
+import kt from "react-syntax-highlighter/dist/esm/languages/hljs/kotlin";
+import scala from "react-syntax-highlighter/dist/esm/languages/hljs/scala";
+import sh from "react-syntax-highlighter/dist/esm/languages/hljs/bash";
+import sql from "react-syntax-highlighter/dist/esm/languages/hljs/sql";
+import html from "react-syntax-highlighter/dist/esm/languages/hljs/xml";
+import css from "react-syntax-highlighter/dist/esm/languages/hljs/css";
+import scss from "react-syntax-highlighter/dist/esm/languages/hljs/scss";
+import jsonLang from "react-syntax-highlighter/dist/esm/languages/hljs/json";
+import yaml from "react-syntax-highlighter/dist/esm/languages/hljs/yaml";
+import toml from "react-syntax-highlighter/dist/esm/languages/hljs/ini";
+import xml from "react-syntax-highlighter/dist/esm/languages/hljs/xml";
+import md from "react-syntax-highlighter/dist/esm/languages/hljs/markdown";
+import dockerfile from "react-syntax-highlighter/dist/esm/languages/hljs/dockerfile";
+import diff from "react-syntax-highlighter/dist/esm/languages/hljs/diff";
+import plaintext from "react-syntax-highlighter/dist/esm/languages/hljs/plaintext";
 import { useTranslation } from "@/hooks/use-translation";
+
+SyntaxHighlighter.registerLanguage("js", js);
+SyntaxHighlighter.registerLanguage("javascript", js);
+SyntaxHighlighter.registerLanguage("ts", ts);
+SyntaxHighlighter.registerLanguage("typescript", ts);
+SyntaxHighlighter.registerLanguage("jsx", jsx);
+SyntaxHighlighter.registerLanguage("tsx", tsx);
+SyntaxHighlighter.registerLanguage("py", py);
+SyntaxHighlighter.registerLanguage("python", py);
+SyntaxHighlighter.registerLanguage("rb", rb);
+SyntaxHighlighter.registerLanguage("ruby", rb);
+SyntaxHighlighter.registerLanguage("go", go);
+SyntaxHighlighter.registerLanguage("rust", rs);
+SyntaxHighlighter.registerLanguage("java", java);
+SyntaxHighlighter.registerLanguage("c", c);
+SyntaxHighlighter.registerLanguage("cpp", cpp);
+SyntaxHighlighter.registerLanguage("h", c);
+SyntaxHighlighter.registerLanguage("hpp", cpp);
+SyntaxHighlighter.registerLanguage("cs", cs);
+SyntaxHighlighter.registerLanguage("csharp", cs);
+SyntaxHighlighter.registerLanguage("php", php);
+SyntaxHighlighter.registerLanguage("swift", swift);
+SyntaxHighlighter.registerLanguage("kt", kt);
+SyntaxHighlighter.registerLanguage("kotlin", kt);
+SyntaxHighlighter.registerLanguage("scala", scala);
+SyntaxHighlighter.registerLanguage("sh", sh);
+SyntaxHighlighter.registerLanguage("bash", sh);
+SyntaxHighlighter.registerLanguage("sql", sql);
+SyntaxHighlighter.registerLanguage("html", html);
+SyntaxHighlighter.registerLanguage("css", css);
+SyntaxHighlighter.registerLanguage("scss", scss);
+SyntaxHighlighter.registerLanguage("less", css);
+SyntaxHighlighter.registerLanguage("json", jsonLang);
+SyntaxHighlighter.registerLanguage("yaml", yaml);
+SyntaxHighlighter.registerLanguage("yml", yaml);
+SyntaxHighlighter.registerLanguage("toml", toml);
+SyntaxHighlighter.registerLanguage("ini", toml);
+SyntaxHighlighter.registerLanguage("xml", xml);
+SyntaxHighlighter.registerLanguage("md", md);
+SyntaxHighlighter.registerLanguage("markdown", md);
+SyntaxHighlighter.registerLanguage("dockerfile", dockerfile);
+SyntaxHighlighter.registerLanguage("diff", diff);
+SyntaxHighlighter.registerLanguage("plaintext", plaintext);
+SyntaxHighlighter.registerLanguage("text", plaintext);
+
+const EXT_TO_LANG: Record<string, string> = {
+  js: "javascript",
+  jsx: "jsx",
+  ts: "typescript",
+  tsx: "tsx",
+  py: "python",
+  rb: "ruby",
+  go: "go",
+  rs: "rust",
+  java: "java",
+  c: "c",
+  cpp: "cpp",
+  h: "c",
+  hpp: "cpp",
+  cs: "csharp",
+  php: "php",
+  swift: "swift",
+  kt: "kotlin",
+  scala: "scala",
+  sh: "bash",
+  bash: "bash",
+  sql: "sql",
+  html: "html",
+  css: "css",
+  scss: "scss",
+  less: "css",
+  json: "json",
+  yaml: "yaml",
+  yml: "yaml",
+  toml: "toml",
+  xml: "xml",
+  md: "markdown",
+  mdx: "markdown",
+  dockerfile: "dockerfile",
+  env: "bash",
+  gitignore: "bash",
+  makefile: "bash",
+  csv: "plaintext",
+  tsv: "plaintext",
+  log: "plaintext",
+  txt: "plaintext",
+  cfg: "ini",
+  conf: "ini",
+};
+
+async function getPresignedUrl(key: string, bucketId?: string | null): Promise<string | null> {
+  const params = new URLSearchParams({ key });
+  if (bucketId) params.set("bucketId", bucketId);
+  const res = await fetch(`/api/files/link?${params.toString()}`);
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.url || null;
+}
+
+async function getFileContent(key: string, bucketId?: string | null): Promise<string> {
+  const params = new URLSearchParams({ key });
+  if (bucketId) params.set("bucketId", bucketId);
+  const res = await fetch(`/api/files/content?${params.toString()}`);
+  if (!res.ok) throw new Error("Failed to fetch file content");
+  return res.text();
+}
 
 export function FilePreview() {
   const { previewItem, setPreviewItem, currentBucketId } = useFileStore();
-  const linkMutation = useFileLink();
   const { t } = useTranslation();
   const [content, setContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const isFile = previewItem?.type === "file";
   const fileItem = isFile ? (previewItem as FileItem) : null;
@@ -28,30 +162,28 @@ export function FilePreview() {
 
     const shouldFetchContent = isCodeFile(fileItem.name) || isMarkdownFile(fileItem.name) || isTextFile(fileItem.name);
 
-    let cancelled = false;
+    if (!shouldFetchContent) return;
 
-    if (shouldFetchContent) {
-      setLoading(true);
-      linkMutation.mutateAsync({ key: fileItem.key, bucketId: currentBucketId }).then((result) => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+
+    getFileContent(fileItem.key, currentBucketId)
+      .then((text) => {
         if (cancelled) return;
-        if (result.url) {
-          fetch(result.url)
-            .then((res) => res.text())
-            .then((text) => {
-              if (cancelled) return;
-              setContent(text);
-              setLoading(false);
-            })
-            .catch(() => { if (!cancelled) setLoading(false); });
-        } else {
-          if (!cancelled) setLoading(false);
-        }
-      }).catch(() => { if (!cancelled) setLoading(false); });
-    }
+        setContent(text);
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : "Failed to load content");
+        setLoading(false);
+      });
 
     return () => {
       cancelled = true;
       setContent(null);
+      setError(null);
     };
   }, [fileItem?.key, currentBucketId]);
 
@@ -138,27 +270,39 @@ export function FilePreview() {
             <div className="flex items-center justify-center h-full">
               <Loader2 className="h-6 w-6 animate-spin text-text-tertiary" />
             </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center h-full gap-2">
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
           ) : isAudioFile(fileItem.name) ? (
             <MediaPreview fileKey={fileItem.key} type="audio" bucketId={currentBucketId} />
           ) : isMarkdownFile(fileItem.name) && content ? (
-            <div className="p-6 prose prose-sm dark:prose-invert max-w-none">
+            <div className="p-6 prose prose-sm dark:prose-invert prose-headings:text-text-primary prose-p:text-text-secondary prose-a:text-brand-indigo prose-strong:text-text-primary prose-code:text-text-primary prose-code:bg-surface-elevated prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-surface-elevated prose-pre:border prose-pre:border-border-subtle max-w-none">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
             </div>
-          ) : (isCodeFile(fileItem.name) || isTextFile(fileItem.name)) && content ? (
+          ) : isCodeFile(fileItem.name) && content ? (
             <div className="p-4">
               <SyntaxHighlighter
-                language={ext || "text"}
+                language={EXT_TO_LANG[ext] || ext || "plaintext"}
                 style={atomOneDark}
                 customStyle={{ 
                   borderRadius: "0.5rem", 
                   fontSize: "0.8125rem",
-                  background: "var(--color-surface-base)",
-                  padding: "1rem"
+                  background: "var(--color-surface-elevated)",
+                  padding: "1rem",
+                  color: "var(--color-text-secondary)",
                 }}
+                lineNumberStyle={{ color: "var(--color-text-quaternary)", minWidth: "2.5em" }}
                 showLineNumbers
               >
                 {content}
               </SyntaxHighlighter>
+            </div>
+          ) : isTextFile(fileItem.name) && content ? (
+            <div className="p-4">
+              <pre className="p-4 rounded-lg bg-surface-elevated text-sm leading-relaxed whitespace-pre-wrap break-all font-mono text-text-secondary overflow-auto max-h-full">
+                {content}
+              </pre>
             </div>
           ) : (
             <div className="flex items-center justify-center h-full text-text-tertiary text-sm">
@@ -184,7 +328,6 @@ function ImageLightbox({
   onClose: () => void;
   onBackdropClick: (e: React.MouseEvent) => void;
 }) {
-  const linkMutation = useFileLink();
   const { t } = useTranslation();
   const [url, setUrl] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -208,8 +351,8 @@ function ImageLightbox({
     setRotation(0);
     setPosition({ x: 0, y: 0 });
     positionRef.current = { x: 0, y: 0 };
-    linkMutation.mutateAsync({ key: fileKey, bucketId }).then((result) => {
-      if (result.url) setUrl(result.url);
+    getPresignedUrl(fileKey, bucketId).then((result) => {
+      if (result) setUrl(result);
     });
   }, [fileKey, bucketId]);
 
@@ -456,15 +599,14 @@ function VideoLightbox({
   onClose: () => void;
   onBackdropClick: (e: React.MouseEvent) => void;
 }) {
-  const linkMutation = useFileLink();
   const { t } = useTranslation();
   const [url, setUrl] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     setLoaded(false);
-    linkMutation.mutateAsync({ key: fileKey, bucketId }).then((result) => {
-      if (result.url) setUrl(result.url);
+    getPresignedUrl(fileKey, bucketId).then((result) => {
+      if (result) setUrl(result);
     });
   }, [fileKey, bucketId]);
 
@@ -521,12 +663,11 @@ function VideoLightbox({
 }
 
 function MediaPreview({ fileKey, type, bucketId }: { fileKey: string; type: "audio"; bucketId?: string | null }) {
-  const linkMutation = useFileLink();
   const [url, setUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    linkMutation.mutateAsync({ key: fileKey, bucketId }).then((result) => {
-      if (result.url) setUrl(result.url);
+    getPresignedUrl(fileKey, bucketId).then((result) => {
+      if (result) setUrl(result);
     }).catch(() => {});
   }, [fileKey, bucketId]);
 
