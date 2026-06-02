@@ -8,13 +8,9 @@
 
 A simple and efficient personal object storage file manager.
 
-简洁高效的个人对象存储文件管理系统。
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/LogLInk1K/LiteS3)
-
-</div>
-
 ---
+
+- English | [中文](./README_CN.md)
 
 ## What is LiteS3?
 
@@ -39,6 +35,8 @@ No complex setup. No vendor lock-in. Just connect your bucket and go.
 ## Quick Start
 
 ### One-Click Deploy (Vercel)
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/LogLInk1K/LiteS3)
 
 Click the button above, then add these environment variables in the Vercel dashboard:
 
