@@ -15,6 +15,7 @@ A simple and efficient personal object storage file manager.
 ## Screenshot
 
 ![Screenshot1](screenshot/LiteS3-1.webp)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FLogLInk1K%2FLiteS3.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FLogLInk1K%2FLiteS3?ref=badge_shield)
 
 ![Screenshot2](screenshot/LiteS3-2.webp)
 
@@ -96,3 +97,6 @@ Next.js 16 · React 19 · Tailwind CSS 4 · Drizzle ORM · NextAuth.js · AWS S3
 ## License
 
 [AGPL-3.0](LICENSE)
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FLogLInk1K%2FLiteS3.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FLogLInk1K%2FLiteS3?ref=badge_large)
