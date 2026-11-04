@@ -210,18 +210,48 @@ export async function setDefaultBucket(id: string): Promise<void> {
 export async function listObjects(bucketId: string, prefix: string = "") {
   const config = await getBucketConfig(bucketId);
   if (!config) throw new Error("Bucket not found");
-  
+
   const client = createS3Client(config);
   const normalizedPrefix = prefix && !prefix.endsWith("/") ? prefix + "/" : prefix;
-  
-  const command = new ListObjectsV2Command({
-    Bucket: config.bucketName,
-    Prefix: normalizedPrefix,
-    Delimiter: "/",
-    MaxKeys: 1000,
-  });
-  
-  return client.send(command);
+
+  const buildCommand = (continuationToken?: string) =>
+    new ListObjectsV2Command({
+      Bucket: config.bucketName,
+      Prefix: normalizedPrefix,
+      Delimiter: "/",
+      MaxKeys: 1000,
+      ContinuationToken: continuationToken,
+    });
+
+  const firstPage = await client.send(buildCommand());
+
+  // A single ListObjectsV2 response caps at 1000 keys, so everything past the
+  // first page was silently missing from the file list. Aggregate all pages.
+  const contents = [...(firstPage.Contents || [])];
+  const commonPrefixes = [...(firstPage.CommonPrefixes || [])];
+  let keyCount = firstPage.KeyCount ?? (contents.length + commonPrefixes.length);
+  let continuationToken = firstPage.IsTruncated ? firstPage.NextContinuationToken : undefined;
+
+  while (continuationToken) {
+    const page = await client.send(buildCommand(continuationToken));
+
+    if (page.Contents) contents.push(...page.Contents);
+    if (page.CommonPrefixes) commonPrefixes.push(...page.CommonPrefixes);
+    keyCount += page.KeyCount ?? ((page.Contents?.length ?? 0) + (page.CommonPrefixes?.length ?? 0));
+
+    const nextToken = page.IsTruncated ? page.NextContinuationToken : undefined;
+    // Guard against S3-compatible endpoints that keep returning the same token.
+    continuationToken = nextToken && nextToken !== continuationToken ? nextToken : undefined;
+  }
+
+  return {
+    ...firstPage,
+    Contents: contents,
+    CommonPrefixes: commonPrefixes,
+    KeyCount: keyCount,
+    IsTruncated: false,
+    NextContinuationToken: undefined,
+  };
 }
 
 export async function listAllObjects(bucketId: string, prefix: string) {
