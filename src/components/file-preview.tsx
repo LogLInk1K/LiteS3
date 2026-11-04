@@ -262,7 +262,9 @@ export function FilePreview() {
       </button>
       
       <div className="w-225 h-162.5 max-w-[95vw] max-h-[90vh] flex flex-col bg-bg-panel rounded-xl overflow-hidden shadow-2xl">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle">
+        {/* The close button is pinned to the viewport corner, so below lg it sits on top
+            of the card header: reserve its 56px + gap or long names run underneath it */}
+        <div className="flex items-center justify-between px-5 py-4 max-lg:pr-16 border-b border-border-subtle">
           <div className="flex items-center gap-3 min-w-0">
             <span className="text-text-primary font-medium truncate">
               {fileItem.name}
@@ -556,13 +558,13 @@ function ImageLightbox({
       </div>
 
       <div 
-        className="absolute top-4 left-4 z-10 px-3 py-1.5 rounded-lg"
+        className="absolute top-4 left-4 z-10 max-w-[calc(100vw_-_5rem)] px-3 py-1.5 rounded-lg"
         style={{ 
           backgroundColor: 'rgba(25,26,27,0.9)',
           border: '1px solid rgba(255,255,255,0.1)'
         }}
       >
-        <span className="text-sm truncate max-w-50 sm:max-w-75" style={{ color: '#d0d6e0' }}>{fileName}</span>
+        <span className="block text-sm truncate max-w-50 sm:max-w-75" style={{ color: '#d0d6e0' }}>{fileName}</span>
       </div>
 
       {!loaded && (
@@ -642,13 +644,13 @@ function VideoLightbox({
       </button>
 
       <div 
-        className="absolute top-4 left-4 z-10 px-3 py-1.5 rounded-lg"
+        className="absolute top-4 left-4 z-10 max-w-[calc(100vw_-_5rem)] px-3 py-1.5 rounded-lg"
         style={{ 
           backgroundColor: 'rgba(25,26,27,0.9)',
           border: '1px solid rgba(255,255,255,0.1)'
         }}
       >
-        <span className="text-sm truncate max-w-50 sm:max-w-75" style={{ color: '#d0d6e0' }}>{fileName}</span>
+        <span className="block text-sm truncate max-w-50 sm:max-w-75" style={{ color: '#d0d6e0' }}>{fileName}</span>
       </div>
 
       {!url && !error && (
