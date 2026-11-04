@@ -96,5 +96,24 @@ export function triggerDownload(url: string) {
   link.style.display = "none";
   document.body.appendChild(link);
   link.click();
-  link.remove();
+  // Removing the element immediately can cancel the navigation in some browsers.
+  window.setTimeout(() => link.remove(), 1000);
+}
+
+/**
+ * Each URL is loaded in its own browsing context. Firing several <a>.click()
+ * calls on one page makes the browser drop the pending navigations, so only
+ * one or two downloads survive. Hidden iframes keep every request independent,
+ * and never navigate the main tab away if a URL happens to be inline.
+ */
+export function triggerDownloads(urls: string[], intervalMs = 300) {
+  urls.forEach((url, index) => {
+    window.setTimeout(() => {
+      const frame = document.createElement("iframe");
+      frame.style.display = "none";
+      frame.src = url;
+      document.body.appendChild(frame);
+      window.setTimeout(() => frame.remove(), 15_000);
+    }, index * intervalMs);
+  });
 }

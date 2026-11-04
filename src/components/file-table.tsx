@@ -15,7 +15,7 @@ import { Button } from "./ui/button";
 import { useRef, useCallback, useState, useEffect } from "react";
 import { useTranslation } from "@/hooks/use-translation";
 import { useQueryClient } from "@tanstack/react-query";
-import { cn, triggerDownload } from "@/lib/utils";
+import { cn, triggerDownloads } from "@/lib/utils";
 
 const PAGE_SIZE = 30;
 
@@ -118,14 +118,14 @@ export function FileTable() {
 
     const batchSize = 500; // keep in sync with MAX_BATCH_KEYS on the server
     try {
+      const urls: string[] = [];
       for (let i = 0; i < keys.length; i += batchSize) {
         const links = await resolveLinks(keys.slice(i, i + batchSize), currentBucketId, true);
         for (const link of links) {
-          if (link.url) {
-            triggerDownload(link.url);
-          }
+          if (link.url) urls.push(link.url);
         }
       }
+      triggerDownloads(urls);
     } catch (error) {
       console.error("Batch download failed:", error);
     }
