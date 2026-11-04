@@ -604,13 +604,14 @@ function VideoLightbox({
 }) {
   const { t } = useTranslation();
   const [url, setUrl] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    setLoaded(false);
-    getStableObjectUrl(fileKey, bucketId).then((result) => {
-      if (result) setUrl(result);
-    });
+    setUrl(null);
+    setError(false);
+    getStableObjectUrl(fileKey, bucketId)
+      .then((result) => (result ? setUrl(result) : setError(true)))
+      .catch(() => setError(true));
   }, [fileKey, bucketId]);
 
   return (
@@ -644,20 +645,22 @@ function VideoLightbox({
         <span className="text-sm truncate max-w-50 sm:max-w-75" style={{ color: '#d0d6e0' }}>{fileName}</span>
       </div>
 
-      {!loaded && (
+      {!url && !error && (
         <Loader2 className="absolute h-8 w-8 animate-spin" style={{ color: 'rgba(255,255,255,0.3)' }} />
       )}
-      
+
+      {error && (
+        <p className="text-sm" style={{ color: '#d0d6e0' }}>{t("common.failedToLoad")}</p>
+      )}
+
       {url && (
         <video
           src={url}
           controls
+          preload="metadata"
           className="max-w-[95vw] max-h-[90vh] rounded-lg"
-          style={{ 
-            opacity: loaded ? 1 : 0,
-            backgroundColor: '#0f1011'
-          }}
-          onLoadedData={() => setLoaded(true)}
+          style={{ backgroundColor: '#0f1011' }}
+          onError={() => setError(true)}
           onClick={(e) => e.stopPropagation()}
         />
       )}
@@ -666,13 +669,25 @@ function VideoLightbox({
 }
 
 function MediaPreview({ fileKey, type, bucketId }: { fileKey: string; type: "audio"; bucketId?: string | null }) {
+  const { t } = useTranslation();
   const [url, setUrl] = useState<string | null>(null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    getStableObjectUrl(fileKey, bucketId).then((result) => {
-      if (result) setUrl(result);
-    }).catch(() => {});
+    setUrl(null);
+    setError(false);
+    getStableObjectUrl(fileKey, bucketId)
+      .then((result) => (result ? setUrl(result) : setError(true)))
+      .catch(() => setError(true));
   }, [fileKey, bucketId]);
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-sm text-text-tertiary">{t("common.failedToLoad")}</p>
+      </div>
+    );
+  }
 
   if (!url) {
     return (
@@ -684,7 +699,7 @@ function MediaPreview({ fileKey, type, bucketId }: { fileKey: string; type: "aud
 
   return (
     <div className="flex items-center justify-center h-full p-6 bg-surface-base">
-      <audio src={url} controls className="w-full max-w-lg" />
+      <audio src={url} controls preload="metadata" onError={() => setError(true)} className="w-full max-w-lg" />
     </div>
   );
 }

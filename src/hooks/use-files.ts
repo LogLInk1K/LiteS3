@@ -4,6 +4,7 @@ import { useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FileOrFolder } from "@/store/file-store";
 import { buildPublicUrl } from "@/lib/public-url";
+import { isImageFile } from "@/lib/utils";
 
 async function fetchFiles(prefix: string, bucketId?: string | null) {
   const url = new URL("/api/files", window.location.origin);
@@ -296,9 +297,10 @@ export async function getStableObjectUrl(
 }
 
 /**
- * Resolves object URLs for a page of images. Public buckets are built locally
- * with zero requests; private buckets reuse persisted presigned URLs so a reload
- * neither re-signs nor re-downloads the images.
+ * Signs and persists object URLs for a whole page of media in one request.
+ * Only image URLs are returned, so audio/video keep their cover instead of
+ * trying to render a broken <img>. Public buckets are built locally with zero
+ * requests; private buckets reuse persisted presigned URLs across reloads.
  */
 export function useThumbnailUrls(
   keys: string[],
@@ -315,13 +317,14 @@ export function useThumbnailUrls(
   const result: Record<string, string> = {};
   if (publicUrl) {
     for (const key of keys) {
+      if (!isImageFile(key)) continue;
       const url = buildPublicUrl(publicUrl, key);
       if (url) result[key] = url;
     }
     return result;
   }
   for (const link of data ?? []) {
-    if (link.url) result[link.key] = link.url;
+    if (link.url && isImageFile(link.key)) result[link.key] = link.url;
   }
   return result;
 }

@@ -2,7 +2,7 @@
 
 import { useFileStore, FileOrFolder } from "@/store/file-store";
 import { useFiles, useMoveFile, useCopyFile, useBuckets, useResolvedFileLinks, useThumbnailUrls } from "@/hooks/use-files";
-import { isImageFile } from "@/hooks/use-thumbnail";
+import { isThumbnailable } from "@/hooks/use-thumbnail";
 import { useUpload } from "@/hooks/use-upload";
 import { useSelectionBox } from "@/hooks/use-selection-box";
 import { FileCard, FileCardSkeleton } from "./file-card";
@@ -110,10 +110,11 @@ export function FileTable() {
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
   const pagedItems = filteredItems.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
-  const imageKeys = pagedItems
-    .filter((item) => item.type !== "folder" && isImageFile(item.name))
+  // Sign every previewable media URL in one batch; only images get a thumbnail src.
+  const mediaKeys = pagedItems
+    .filter((item) => item.type !== "folder" && isThumbnailable(item.name))
     .map((item) => item.key);
-  const thumbnailUrls = useThumbnailUrls(imageKeys, currentBucketId, currentBucket?.publicUrl);
+  const thumbnailUrls = useThumbnailUrls(mediaKeys, currentBucketId, currentBucket?.publicUrl);
 
   const pathParts = currentPrefix.split("/").filter(Boolean);
 
