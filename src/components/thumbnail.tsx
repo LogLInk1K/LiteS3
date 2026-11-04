@@ -18,7 +18,7 @@ function MediaCover({ name, size }: { name: string; size: "card" | "list" }) {
     <div
       className={cn(
         "relative flex items-center justify-center overflow-hidden",
-        size === "card" ? "h-20 w-20 rounded-lg" : "h-8 w-8 rounded"
+        size === "card" ? "h-(--thumb-size) w-(--thumb-size) rounded-lg" : "h-8 w-8 rounded"
       )}
       style={{ backgroundColor: "#1a1a2e" }}
     >
@@ -28,7 +28,7 @@ function MediaCover({ name, size }: { name: string; size: "card" | "list" }) {
         </svg>
       ) : (
         <Music
-          className={cn("text-[#6366f1]", size === "card" ? "h-8 w-8" : "h-4 w-4")}
+          className={cn("text-[#6366f1]", size === "card" ? "h-(--glyph-size) w-(--glyph-size)" : "h-4 w-4")}
           strokeWidth={2}
         />
       )}
@@ -55,7 +55,7 @@ export function Thumbnail({ name, src, size = "card", className }: ThumbnailProp
           observer.disconnect();
         }
       },
-      { rootMargin: "400px 0px", threshold: 0 }
+      { rootMargin: "100px 0px", threshold: 0 }
     );
 
     observer.observe(ref.current);
@@ -76,7 +76,7 @@ export function Thumbnail({ name, src, size = "card", className }: ThumbnailProp
   }, [visible, src]);
 
   const sizeClasses = size === "card"
-    ? "max-h-20 max-w-full object-contain rounded-lg"
+    ? "max-h-(--thumb-size) max-w-full object-contain rounded-lg"
     : "h-8 w-8 object-cover rounded shrink-0";
 
   const loading = visible && !!src && !loaded && !error;
@@ -85,7 +85,7 @@ export function Thumbnail({ name, src, size = "card", className }: ThumbnailProp
   const showCover = !src && (isVideoFile(name) || isAudioFile(name));
 
   return (
-    <div ref={ref} className={cn("relative overflow-hidden flex items-center justify-center", size === "card" ? "h-20 w-full min-w-20" : "h-8 w-8 shrink-0", className)}>
+    <div ref={ref} className={cn("relative overflow-hidden flex items-center justify-center", size === "card" ? "h-(--thumb-size) w-full min-w-(--thumb-size)" : "h-8 w-8 shrink-0", className)}>
       <div
         aria-hidden="true"
         className={cn(
@@ -96,7 +96,7 @@ export function Thumbnail({ name, src, size = "card", className }: ThumbnailProp
         {showCover ? (
           <MediaCover name={name} size={size} />
         ) : (
-          <div className={cn("flex items-center justify-center rounded-lg", size === "card" ? "h-12 w-12" : "h-8 w-8", "bg-hover-bg", loading && "animate-pulse")}>
+          <div className={cn("flex items-center justify-center rounded-lg", size === "card" ? "h-(--icon-size) w-(--icon-size)" : "h-8 w-8", "bg-hover-bg", loading && "animate-pulse")}>
             {isVideoFile(name) ? (
               <Play className="h-4 w-4 text-text-tertiary" fill="currentColor" />
             ) : isAudioFile(name) ? (

@@ -47,20 +47,20 @@ export function FileCard({ item, thumbnailUrl }: FileCardProps) {
     <div
       data-key={item.key}
       className={cn(
-        "group relative rounded-lg p-4 cursor-pointer transition-all duration-150",
+        "group relative rounded-lg p-(--card-pad) cursor-pointer transition-all duration-150",
         "bg-surface-elevated/50 border border-transparent",
         !isSelected && "hover:bg-hover-bg/50 hover:border-border-subtle",
         isSelected && "bg-accent-violet/10 border-accent-violet/50"
       )}
       style={{ 
         contentVisibility: "auto", 
-        containIntrinsicSize: "auto 160px"
+        containIntrinsicSize: "auto var(--card-height)"
       }}
       onClick={handleClick}
       onContextMenu={handleContextMenu}
     >
       <div 
-        className="absolute top-3 right-3 z-10" 
+        className="absolute top-3 right-3 z-20" 
         onClick={handleSelect}
       >
         <div
@@ -79,13 +79,13 @@ export function FileCard({ item, thumbnailUrl }: FileCardProps) {
       </div>
 
       <div className="flex flex-col items-center gap-3">
-        <div className="flex items-center justify-center h-20">
+        <div className="flex items-center justify-center h-(--thumb-size)">
           {isFolder ? (
-            <FolderIcon className="h-12 w-12 text-brand-indigo" />
+            <FolderIcon className="h-(--icon-size) w-(--icon-size) text-brand-indigo" />
           ) : hasThumbnail ? (
             <Thumbnail name={item.name} src={thumbnailUrl} size="card" />
           ) : (
-            <FileIcon name={item.name} className="h-12 w-12 text-text-tertiary" />
+            <FileIcon name={item.name} className="h-(--icon-size) w-(--icon-size) text-text-tertiary" />
           )}
         </div>
 
@@ -107,10 +107,10 @@ export function FileCard({ item, thumbnailUrl }: FileCardProps) {
 
 export function FileCardSkeleton() {
   return (
-    <div className="rounded-lg p-4 animate-pulse bg-surface-elevated border border-transparent">
+    <div className="rounded-lg p-(--card-pad) animate-pulse bg-surface-elevated border border-transparent">
       <div className="flex flex-col items-center gap-3">
-        <div className="flex items-center justify-center h-20">
-          <div className="h-12 w-12 rounded-lg bg-hover-bg" />
+        <div className="flex items-center justify-center h-(--thumb-size)">
+          <div className="h-(--icon-size) w-(--icon-size) rounded-lg bg-hover-bg" />
         </div>
         <div className="h-4 rounded w-3/4 bg-hover-bg" />
       </div>

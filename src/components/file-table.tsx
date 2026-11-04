@@ -13,12 +13,65 @@ import { MoveCopyDialog } from "./dialogs/move-copy-dialog";
 import { DeleteProgressDialog } from "./dialogs/delete-progress-dialog";
 import { LayoutGrid, List, ChevronRight, ChevronLeft, HardDrive, Upload, X, Download, Move, Copy, Trash2, FolderPlus, RotateCw, ChevronDown } from "lucide-react";
 import { Button } from "./ui/button";
-import { useRef, useCallback, useState, useEffect } from "react";
+import { useRef, useCallback, useState, useEffect, type CSSProperties } from "react";
 import { useTranslation } from "@/hooks/use-translation";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn, triggerDownloads } from "@/lib/utils";
 
-const PAGE_SIZE = 30;
+interface GridMetrics {
+  columns: number;
+  rows: number;
+  listPageSize: number;
+  cardMin: number;
+  thumb: number;
+  icon: number;
+  glyph: number;
+  pad: number;
+  gap: number;
+  cardHeight: number;
+}
+
+const DEFAULT_GRID: GridMetrics = {
+  columns: 6,
+  rows: 5,
+  listPageSize: 30,
+  cardMin: 240,
+  thumb: 115,
+  icon: 67,
+  glyph: 40,
+  pad: 16,
+  gap: 16,
+  cardHeight: 171,
+};
+
+/** Derive card dimensions and the page size from the visible container. */
+function measureGrid(width: number, height: number): GridMetrics {
+  const wide = width >= 1400;
+  const medium = width >= 900;
+  const compact = width >= 560;
+
+  const cardMin = wide ? 240 : medium ? 200 : compact ? 170 : 140;
+  const thumb = wide ? 115 : medium ? 96 : compact ? 84 : 72;
+  const pad = medium ? 16 : 12;
+  const gap = medium ? 16 : 12;
+
+  const columns = Math.max(1, Math.floor((width + gap) / (cardMin + gap)));
+  const rowHeight = thumb + pad * 2 + 24 + gap;
+  const rows = Math.max(3, Math.floor(height / rowHeight) + 1);
+
+  return {
+    columns,
+    rows,
+    listPageSize: Math.max(20, Math.floor(height / 40)),
+    cardMin,
+    thumb,
+    icon: Math.round(thumb * 0.58),
+    glyph: Math.round(thumb * 0.35),
+    pad,
+    gap,
+    cardHeight: thumb + pad * 2 + 24,
+  };
+}
 
 export function FileTable() {
   const {
@@ -92,6 +145,48 @@ export function FileTable() {
     onSelectionChange: handleSelectionChange,
   });
 
+  const [grid, setGrid] = useState<GridMetrics>(DEFAULT_GRID);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const measure = () => {
+      const style = getComputedStyle(container);
+      const width = container.clientWidth
+        - parseFloat(style.paddingLeft || "0")
+        - parseFloat(style.paddingRight || "0");
+      const height = container.clientHeight
+        - parseFloat(style.paddingTop || "0")
+        - parseFloat(style.paddingBottom || "0");
+      const next = measureGrid(width, height);
+      setGrid((prev) =>
+        prev.columns === next.columns &&
+        prev.rows === next.rows &&
+        prev.listPageSize === next.listPageSize &&
+        prev.thumb === next.thumb ? prev : next
+      );
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [containerRef]);
+
+  const gridVars = {
+    "--thumb-size": `${grid.thumb}px`,
+    "--icon-size": `${grid.icon}px`,
+    "--glyph-size": `${grid.glyph}px`,
+    "--card-pad": `${grid.pad}px`,
+    "--card-height": `${grid.cardHeight}px`,
+  } as CSSProperties;
+
+  const gridStyle = {
+    gridTemplateColumns: `repeat(auto-fill, minmax(${grid.cardMin}px, 1fr))`,
+    gap: grid.gap,
+  } as CSSProperties;
+
   const allItems: FileOrFolder[] = [
     ...(data?.folders || []),
     ...(data?.files || []),
@@ -101,15 +196,28 @@ export function FileTable() {
     index === self.findIndex((i) => i.key === item.key)
   );
 
+  // S3 returns keys in lexicographic order, which for timestamp-prefixed keys
+  // means oldest first. Keep folders grouped on top, then files newest first.
+  const sortedItems = [...uniqueItems].sort((a, b) => {
+    const aIsFolder = a.type === "folder";
+    const bIsFolder = b.type === "folder";
+    if (aIsFolder !== bIsFolder) return aIsFolder ? -1 : 1;
+    if (aIsFolder) return a.name.localeCompare(b.name);
+    if (a.type !== "file" || b.type !== "file") return 0;
+    return (Date.parse(b.lastModified) || 0) - (Date.parse(a.lastModified) || 0);
+  });
+
   const filteredItems = searchQuery
-    ? uniqueItems.filter((item) =>
+    ? sortedItems.filter((item) =>
         item.name.toLowerCase().includes(searchQuery.toLowerCase())
       )
-    : uniqueItems;
+    : sortedItems;
 
-  const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
+  // A page is a whole number of grid rows, so a row never ends with 1-3 cards.
+  const pageSize = viewMode === "grid" ? grid.columns * grid.rows : grid.listPageSize;
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
   const safePage = Math.min(currentPage, totalPages);
-  const pagedItems = filteredItems.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const pagedItems = filteredItems.slice((safePage - 1) * pageSize, safePage * pageSize);
   // Sign every previewable media URL in one batch; only images get a thumbnail src.
   const mediaKeys = pagedItems
     .filter((item) => item.type !== "folder" && isThumbnailable(item.name))
@@ -375,13 +483,11 @@ export function FileTable() {
 
       <div 
         ref={containerRef}
+        style={gridVars}
         className="flex-1 overflow-y-auto p-4 will-change-transform bg-bg-marketing relative select-none min-h-0"
       >
         {isLoading || isRefreshing ? (
-          <div 
-            className="grid gap-4"
-            style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}
-          >
+          <div className="grid" style={gridStyle}>
             {Array.from({ length: 12 }).map((_, i) => (
               <FileCardSkeleton key={i} />
             ))}
@@ -399,10 +505,7 @@ export function FileTable() {
             <p className="text-sm mt-1">{t("files.dragDrop")}</p>
           </div>
         ) : viewMode === "grid" ? (
-          <div 
-            className="grid gap-4"
-            style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}
-          >
+          <div className="grid" style={gridStyle}>
             {pagedItems.map((item) => (
               <FileCard key={item.key} item={item} thumbnailUrl={thumbnailUrls[item.key]} />
             ))}
