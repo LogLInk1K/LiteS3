@@ -541,7 +541,7 @@ export function FileTable() {
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-4 py-2 border-t border-border-subtle bg-bg-panel">
           <span className="text-sm text-text-quaternary">
-            {filteredItems.length} {t("files.items")}, {t("files.page")} {safePage}/{totalPages}
+            {t("files.pageTotalPrefix")} {filteredItems.length} {t("files.items")}
           </span>
           <div className="flex items-center gap-1">
             <Button
