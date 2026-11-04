@@ -29,7 +29,7 @@ interface DeleteProgressDialogProps {
 
 export function DeleteProgressDialog({ open, onOpenChange, items, onComplete }: DeleteProgressDialogProps) {
   const { t } = useTranslation();
-  const { currentBucketId } = useFileStore();
+  const currentBucketId = useFileStore((s) => s.currentBucketId);
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<"confirm" | "deleting" | "complete" | "error">("confirm");
   const [deletedCount, setDeletedCount] = useState(0);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useFileStore } from "@/store/file-store";
 import { useResolvedFileLink, useBuckets } from "@/hooks/use-files";
 import { useTranslation } from "@/hooks/use-translation";
@@ -8,7 +9,23 @@ import { Pencil, Trash2, Copy, Move, Link, Download, Eye } from "lucide-react";
 import { cn, triggerDownload } from "@/lib/utils";
 
 export function ContextMenu() {
-  const { contextMenu, closeContextMenu, setPreviewItem, openRenameDialog, openMoveDialog, openCopyDialog, startDelete, currentBucketId } = useFileStore();
+  // Only the menu target and the bucket matter here; selecting a row or opening the
+  // lightbox must not rebuild the menu.
+  const contextMenu = useFileStore((s) => s.contextMenu);
+  const currentBucketId = useFileStore((s) => s.currentBucketId);
+  const {
+    closeContextMenu, setPreviewItem, openRenameDialog, openMoveDialog,
+    openCopyDialog, startDelete,
+  } = useFileStore(
+    useShallow((s) => ({
+      closeContextMenu: s.closeContextMenu,
+      setPreviewItem: s.setPreviewItem,
+      openRenameDialog: s.openRenameDialog,
+      openMoveDialog: s.openMoveDialog,
+      openCopyDialog: s.openCopyDialog,
+      startDelete: s.startDelete,
+    })),
+  );
   const { t } = useTranslation();
   const { data: bucketsData } = useBuckets();
   const buckets = bucketsData?.buckets || [];

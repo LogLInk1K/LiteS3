@@ -20,7 +20,7 @@ interface MoveCopyDialogProps {
 
 export function MoveCopyDialog({ open, onOpenChange, item, mode, batchItems }: MoveCopyDialogProps) {
   const { t } = useTranslation();
-  const { currentBucketId } = useFileStore();
+  const currentBucketId = useFileStore((s) => s.currentBucketId);
   const [selectedPath, setSelectedPath] = useState("");
   const [currentBrowsePath, setCurrentBrowsePath] = useState("");
   const [operationStatus, setOperationStatus] = useState<"browsing" | "processing" | "complete" | "error">("browsing");

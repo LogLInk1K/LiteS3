@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { memo, useState, useEffect } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { cn, formatBytes, formatDate } from "@/lib/utils";
 import { FileOrFolder, useFileStore } from "@/store/file-store";
 import { FileIcon, FolderIcon } from "./file-icon";
@@ -14,10 +15,19 @@ interface FileListItemProps {
   thumbnailUrl?: string;
 }
 
-export function FileListItem({ item, thumbnailUrl }: FileListItemProps) {
-  const { navigateToFolder, setPreviewItem, selectedItems, toggleSelect, openContextMenu } = useFileStore();
+function FileListItemView({ item, thumbnailUrl }: FileListItemProps) {
+  // Subscribed field by field: a row must not re-render because some other row got
+  // selected, a dialog opened or the lightbox appeared.
+  const isSelected = useFileStore((s) => s.selectedItems.has(item.key));
+  const { navigateToFolder, setPreviewItem, toggleSelect, openContextMenu } = useFileStore(
+    useShallow((s) => ({
+      navigateToFolder: s.navigateToFolder,
+      setPreviewItem: s.setPreviewItem,
+      toggleSelect: s.toggleSelect,
+      openContextMenu: s.openContextMenu,
+    })),
+  );
   const { language } = useTranslation();
-  const isSelected = selectedItems.has(item.key);
   const isFolder = item.type === "folder";
   const hasThumbnail = !isFolder && isThumbnailable(item.name);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
@@ -109,3 +119,6 @@ export function FileListItem({ item, thumbnailUrl }: FileListItemProps) {
     </div>
   );
 }
+
+/** Memoised so a parent re-render (or a marquee selection elsewhere) can't walk every row. */
+export const FileListItem = memo(FileListItemView);

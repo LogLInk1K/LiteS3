@@ -1,16 +1,14 @@
 "use client";
 
 import { useFileStore, FileOrFolder } from "@/store/file-store";
+import { useShallow } from "zustand/react/shallow";
 import { useFiles, useMoveFile, useCopyFile, useBuckets, useResolvedFileLinks, useThumbnailUrls } from "@/hooks/use-files";
 import { isThumbnailable } from "@/hooks/use-thumbnail";
 import { useUpload } from "@/hooks/use-upload";
 import { useSelectionBox } from "@/hooks/use-selection-box";
 import { FileCard, FileCardSkeleton } from "./file-card";
 import { FileListItem } from "./file-list-item";
-import { NewFolderDialog } from "./dialogs/new-folder-dialog";
-import { RenameDialog } from "./dialogs/rename-dialog";
-import { MoveCopyDialog } from "./dialogs/move-copy-dialog";
-import { DeleteProgressDialog } from "./dialogs/delete-progress-dialog";
+import { DialogHost } from "./dialog-host";
 import { LayoutGrid, List, ChevronRight, ChevronLeft, HardDrive, Upload, X, Download, Move, Copy, Trash2, FolderPlus, RotateCw } from "lucide-react";
 import { Button } from "./ui/button";
 import { useRef, useCallback, useState, useEffect, type CSSProperties } from "react";
@@ -74,16 +72,41 @@ function measureGrid(width: number, height: number): GridMetrics {
 }
 
 export function FileTable() {
+  // Split subscriptions: state the grid paints, and the (stable) actions it calls.
+  // Dialog state and the lightbox live elsewhere, so opening a preview or a dialog
+  // no longer walks every row of the list.
   const {
     currentBucketId, currentPrefix, pathStack, searchQuery, viewMode, currentPage,
+    selectedItems,
+  } = useFileStore(
+    useShallow((s) => ({
+      currentBucketId: s.currentBucketId,
+      currentPrefix: s.currentPrefix,
+      pathStack: s.pathStack,
+      searchQuery: s.searchQuery,
+      viewMode: s.viewMode,
+      currentPage: s.currentPage,
+      selectedItems: s.selectedItems,
+    })),
+  );
+  const {
     navigateUp, setCurrentPrefix, setViewMode, setCurrentPage,
-    setSelectedItems, selectedItems, clearSelection,
-    renameItem, closeRenameDialog,
-    moveCopyItem, moveCopyMode, closeMoveCopyDialog,
-    batchMoveCopyItems, openBatchMoveDialog, openBatchCopyDialog,
-    newFolderOpen, openNewFolderDialog, closeNewFolderDialog,
-    deleteItems, deleteDialogOpen, startDelete, closeDeleteDialog,
-  } = useFileStore();
+    setSelectedItems, clearSelection,
+    openNewFolderDialog, startDelete, openBatchMoveDialog, openBatchCopyDialog,
+  } = useFileStore(
+    useShallow((s) => ({
+      navigateUp: s.navigateUp,
+      setCurrentPrefix: s.setCurrentPrefix,
+      setViewMode: s.setViewMode,
+      setCurrentPage: s.setCurrentPage,
+      setSelectedItems: s.setSelectedItems,
+      clearSelection: s.clearSelection,
+      openNewFolderDialog: s.openNewFolderDialog,
+      startDelete: s.startDelete,
+      openBatchMoveDialog: s.openBatchMoveDialog,
+      openBatchCopyDialog: s.openBatchCopyDialog,
+    })),
+  );
   const { data, isLoading, error } = useFiles(currentPrefix, currentBucketId);
   const { activeUploads, uploadFiles, removeUpload } = useUpload();
   const { data: bucketsData } = useBuckets();
@@ -604,16 +627,7 @@ export function FileTable() {
         </div>
       )}
 
-      <NewFolderDialog open={newFolderOpen} onOpenChange={closeNewFolderDialog} />
-      <RenameDialog open={!!renameItem} onOpenChange={closeRenameDialog} item={renameItem} />
-      <MoveCopyDialog 
-        open={!!moveCopyItem || batchMoveCopyItems.length > 0} 
-        onOpenChange={closeMoveCopyDialog} 
-        item={moveCopyItem} 
-        mode={moveCopyMode} 
-        batchItems={batchMoveCopyItems}
-      />
-      <DeleteProgressDialog open={deleteDialogOpen} onOpenChange={closeDeleteDialog} items={deleteItems} />
+      <DialogHost />
     </div>
   );
 }

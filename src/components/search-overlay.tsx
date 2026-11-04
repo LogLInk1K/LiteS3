@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useShallow } from "zustand/react/shallow";
 import { HardDrive, Search } from "lucide-react";
 import { FileOrFolder, useFileStore } from "@/store/file-store";
 import { useBuckets, useFiles, useThumbnailUrls } from "@/hooks/use-files";
@@ -26,13 +27,21 @@ interface SearchOverlayProps {
  * instead of scrolling the sticky navbar or re-paginating the file list behind it.
  */
 export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
-  const { currentPrefix, currentBucketId, navigateToFolder, setPreviewItem, previewItem } = useFileStore();
+  // Selected fields only: opening the lightbox writes previewItem, and re-rendering a
+  // hundred result rows for that is most of the click-to-paint cost.
+  const { currentPrefix, currentBucketId, navigateToFolder, setPreviewItem } = useFileStore(
+    useShallow((s) => ({
+      currentPrefix: s.currentPrefix,
+      currentBucketId: s.currentBucketId,
+      navigateToFolder: s.navigateToFolder,
+      setPreviewItem: s.setPreviewItem,
+    })),
+  );
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
   // Results follow a settled term: thumbnail URLs are signed per key set, so matching on
   // every keystroke would fire one signing request per character typed.
   const [term, setTerm] = useState("");
-  const previewOpenRef = useRef(false);
   // Portals need document; skip the first client render to keep SSR output empty.
   const [mounted, setMounted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -68,8 +77,9 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
     setTerm("");
     scrollYRef.current = window.scrollY;
     const handleKey = (e: KeyboardEvent) => {
-      // While the lightbox is up, Escape belongs to it - not to the panel behind.
-      if (e.key === "Escape" && !previewOpenRef.current) close();
+      // While the lightbox is up, Escape belongs to it - not to the panel behind. Read
+      // the store imperatively so tracking it never costs a re-render.
+      if (e.key === "Escape" && useFileStore.getState().previewItem === null) close();
     };
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
@@ -79,10 +89,6 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
     const id = window.setTimeout(() => setTerm(query.trim().toLowerCase()), 180);
     return () => window.clearTimeout(id);
   }, [query]);
-
-  useEffect(() => {
-    previewOpenRef.current = previewItem !== null;
-  }, [previewItem]);
 
   const { data } = useFiles(currentPrefix, currentBucketId);
   const { data: bucketsData } = useBuckets();

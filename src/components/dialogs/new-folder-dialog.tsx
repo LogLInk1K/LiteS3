@@ -13,7 +13,8 @@ interface NewFolderDialogProps {
 
 export function NewFolderDialog({ open, onOpenChange }: NewFolderDialogProps) {
   const { t } = useTranslation();
-  const { currentPrefix, currentBucketId } = useFileStore();
+  const currentPrefix = useFileStore((s) => s.currentPrefix);
+  const currentBucketId = useFileStore((s) => s.currentBucketId);
   const [name, setName] = useState("");
   const createFolder = useCreateFolder();
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { memo, useState, useEffect } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { cn, formatBytes } from "@/lib/utils";
 import { FileOrFolder, useFileStore } from "@/store/file-store";
 import { FileIcon, FolderIcon } from "./file-icon";
@@ -13,9 +14,18 @@ interface FileCardProps {
   thumbnailUrl?: string;
 }
 
-export function FileCard({ item, thumbnailUrl }: FileCardProps) {
-  const { navigateToFolder, setPreviewItem, selectedItems, toggleSelect, openContextMenu } = useFileStore();
-  const isSelected = selectedItems.has(item.key);
+function FileCardView({ item, thumbnailUrl }: FileCardProps) {
+  // Subscribed field by field: a card must not re-render because some other row got
+  // selected, a dialog opened or the lightbox appeared.
+  const isSelected = useFileStore((s) => s.selectedItems.has(item.key));
+  const { navigateToFolder, setPreviewItem, toggleSelect, openContextMenu } = useFileStore(
+    useShallow((s) => ({
+      navigateToFolder: s.navigateToFolder,
+      setPreviewItem: s.setPreviewItem,
+      toggleSelect: s.toggleSelect,
+      openContextMenu: s.openContextMenu,
+    })),
+  );
   const isFolder = item.type === "folder";
   const hasThumbnail = !isFolder && isThumbnailable(item.name);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
@@ -104,6 +114,9 @@ export function FileCard({ item, thumbnailUrl }: FileCardProps) {
     </div>
   );
 }
+
+/** Memoised so a parent re-render (or a marquee selection elsewhere) can't walk every card. */
+export const FileCard = memo(FileCardView);
 
 export function FileCardSkeleton() {
   return (

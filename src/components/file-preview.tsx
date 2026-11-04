@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useFileStore, FileItem } from "@/store/file-store";
 import { isImageFile, isVideoFile, isAudioFile, isCodeFile, isMarkdownFile, isTextFile, getFileExtension } from "@/lib/utils";
 import { Loader2, X, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
@@ -140,7 +141,13 @@ async function getFileContent(key: string, bucketId?: string | null): Promise<st
 }
 
 export function FilePreview() {
-  const { previewItem, setPreviewItem, currentBucketId } = useFileStore();
+  const { previewItem, setPreviewItem, currentBucketId } = useFileStore(
+    useShallow((s) => ({
+      previewItem: s.previewItem,
+      setPreviewItem: s.setPreviewItem,
+      currentBucketId: s.currentBucketId,
+    })),
+  );
   const { t } = useTranslation();
   const [content, setContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -558,7 +565,7 @@ function ImageLightbox({
       </div>
 
       <div 
-        className="absolute top-4 left-4 z-10 max-w-[calc(100vw_-_5rem)] px-3 py-1.5 rounded-lg"
+        className="absolute top-4 left-4 z-10 max-w-[calc(100vw-5rem)] px-3 py-1.5 rounded-lg"
         style={{ 
           backgroundColor: 'rgba(25,26,27,0.9)',
           border: '1px solid rgba(255,255,255,0.1)'
@@ -581,7 +588,9 @@ function ImageLightbox({
             opacity: loaded ? 1 : 0,
             transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
             cursor: scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
-            transition: isDragging ? 'none' : 'transform 0.2s ease, opacity 0.3s ease'
+            // No opacity ramp: a cached image is fully visible the frame it lands, and a
+            // 300ms fade read as lag on every single open.
+            transition: isDragging ? 'none' : 'transform 0.2s ease'
           }}
           onLoad={() => setLoaded(true)}
           onClick={(e) => e.stopPropagation()}
@@ -644,7 +653,7 @@ function VideoLightbox({
       </button>
 
       <div 
-        className="absolute top-4 left-4 z-10 max-w-[calc(100vw_-_5rem)] px-3 py-1.5 rounded-lg"
+        className="absolute top-4 left-4 z-10 max-w-[calc(100vw-5rem)] px-3 py-1.5 rounded-lg"
         style={{ 
           backgroundColor: 'rgba(25,26,27,0.9)',
           border: '1px solid rgba(255,255,255,0.1)'

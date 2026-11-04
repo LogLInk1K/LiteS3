@@ -66,7 +66,6 @@ function generateId(): string {
 }
 
 export function useUpload() {
-  const { currentPrefix, currentBucketId } = useFileStore();
   const queryClient = useQueryClient();
   const [, forceUpdate] = useState({});
 
@@ -79,6 +78,9 @@ export function useUpload() {
   }, []);
 
   const uploadFile = async (file: File, prefix?: string) => {
+    // Read at call time instead of subscribing: this hook is used by components that
+    // render the whole grid, and a subscription would rebuild them on any store write.
+    const { currentPrefix, currentBucketId } = useFileStore.getState();
     const id = generateId();
     const key = (prefix || currentPrefix) + file.name;
     const uploadItem: UploadItem = {

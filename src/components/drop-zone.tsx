@@ -12,7 +12,7 @@ export function DropZone() {
   const { activeUploads, uploadFiles, removeUpload } = useUpload();
   const [isDragging, setIsDragging] = useState(false);
   const { t } = useTranslation();
-  const { currentBucketId } = useFileStore();
+  const currentBucketId = useFileStore((s) => s.currentBucketId);
   const { data: bucketsData } = useBuckets();
   const buckets = bucketsData?.buckets || [];
   const currentBucket = buckets.find((b: { id: string }) => b.id === currentBucketId)

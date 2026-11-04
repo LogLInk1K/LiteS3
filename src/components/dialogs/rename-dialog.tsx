@@ -14,7 +14,8 @@ interface RenameDialogProps {
 
 export function RenameDialog({ open, onOpenChange, item }: RenameDialogProps) {
   const { t } = useTranslation();
-  const { currentPrefix, currentBucketId } = useFileStore();
+  const currentPrefix = useFileStore((s) => s.currentPrefix);
+  const currentBucketId = useFileStore((s) => s.currentBucketId);
   const [name, setName] = useState("");
   const [operationStatus, setOperationStatus] = useState<"editing" | "processing" | "complete" | "error">("editing");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

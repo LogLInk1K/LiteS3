@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useFileStore } from "@/store/file-store";
 import { Input } from "./ui/input";
 import { Search } from "lucide-react";
@@ -11,7 +12,14 @@ import { SearchOverlay } from "./search-overlay";
 import { useTranslation } from "@/hooks/use-translation";
 
 export function Navbar() {
-  const { searchQuery, setSearchQuery, currentBucketId, setCurrentBucketId } = useFileStore();
+  const searchQuery = useFileStore((s) => s.searchQuery);
+  const currentBucketId = useFileStore((s) => s.currentBucketId);
+  const { setSearchQuery, setCurrentBucketId } = useFileStore(
+    useShallow((s) => ({
+      setSearchQuery: s.setSearchQuery,
+      setCurrentBucketId: s.setCurrentBucketId,
+    })),
+  );
   const { t } = useTranslation();
   // Below sm the field moves into a fixed overlay: an inline input would let the
   // on-screen keyboard resize the viewport and shove the sticky header around.
