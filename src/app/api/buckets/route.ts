@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import {
   listAllBuckets,
   createBucketConfig,
+  getBucketConfig,
   testBucketConnection,
   type BucketConfig,
 } from "@/lib/s3";
@@ -53,13 +54,39 @@ export async function POST(request: NextRequest) {
       if (!config.endpoint) {
         return NextResponse.json({ success: false, error: "ENDPOINT_REQUIRED" });
       }
-      if (!config.accessKeyId) {
-        return NextResponse.json({ success: false, error: "ACCESS_KEY_REQUIRED" });
+
+      const hasAccessKey = !!config.accessKeyId;
+      const hasSecretKey = !!config.secretAccessKey;
+      if (hasAccessKey !== hasSecretKey) {
+        return NextResponse.json({ success: false, error: "CREDENTIALS_PAIR_REQUIRED" });
       }
-      if (!config.secretAccessKey) {
-        return NextResponse.json({ success: false, error: "SECRET_KEY_REQUIRED" });
+
+      const testConfig: Omit<BucketConfig, "id" | "isDefault"> = {
+        name: config.name || "",
+        endpoint: config.endpoint,
+        region: config.region || "auto",
+        accessKeyId: config.accessKeyId,
+        secretAccessKey: config.secretAccessKey,
+        bucketName: config.bucketName,
+        publicUrl: config.publicUrl || null,
+      };
+
+      // In edit mode the form leaves credentials blank ("keep current"), so fall
+      // back to the stored ones instead of rejecting the test.
+      if (!hasAccessKey) {
+        const bucketId = typeof body.bucketId === "string" ? body.bucketId : null;
+        if (!bucketId) {
+          return NextResponse.json({ success: false, error: "ACCESS_KEY_REQUIRED" });
+        }
+        const existing = await getBucketConfig(bucketId);
+        if (!existing) {
+          return NextResponse.json({ success: false, error: "BUCKET_NOT_FOUND" });
+        }
+        testConfig.accessKeyId = existing.accessKeyId;
+        testConfig.secretAccessKey = existing.secretAccessKey;
       }
-      const result = await testBucketConnection(config);
+
+      const result = await testBucketConnection(testConfig);
       return NextResponse.json(result);
     }
 

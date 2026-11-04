@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useFileStore } from "@/store/file-store";
-import { useFileLink } from "@/hooks/use-files";
+import { useFileLink, useBuckets } from "@/hooks/use-files";
 import { useTranslation } from "@/hooks/use-translation";
 import { Pencil, Trash2, Copy, Move, Link, Download, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,12 @@ export function ContextMenu() {
   const { contextMenu, closeContextMenu, setPreviewItem, openRenameDialog, openMoveDialog, openCopyDialog, startDelete, currentBucketId } = useFileStore();
   const linkMutation = useFileLink();
   const { t } = useTranslation();
+  const { data: bucketsData } = useBuckets();
+  const buckets = bucketsData?.buckets || [];
+  const currentBucket = buckets.find((b: { id: string }) => b.id === currentBucketId)
+    || buckets.find((b: { isDefault: boolean }) => b.isDefault)
+    || buckets[0];
+  const isPublic = !!currentBucket?.publicUrl;
 
   useEffect(() => {
     if (!contextMenu) return;
@@ -96,7 +102,7 @@ export function ContextMenu() {
             <Download className="mr-2 h-4 w-4" /> {t("files.download")}
           </MenuItem>
           <MenuItem onClick={handleCopyLink}>
-            <Link className="mr-2 h-4 w-4" /> {t("files.copyLink")}
+            <Link className="mr-2 h-4 w-4" /> {isPublic ? t("files.copyPublicLink") : t("files.copyTempLink")}
           </MenuItem>
           <MenuSeparator />
         </>

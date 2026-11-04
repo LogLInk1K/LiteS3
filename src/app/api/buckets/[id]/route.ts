@@ -63,7 +63,7 @@ export async function PUT(
       endpoint: body.endpoint,
       region: body.region,
       bucketName: body.bucketName,
-      publicUrl: body.publicUrl,
+      publicUrl: body.publicUrl || null,
     };
     
     if (body.accessKeyId) {

@@ -21,6 +21,7 @@ interface BucketFormData {
   secretAccessKey: string;
   bucketName: string;
   publicUrl: string;
+  isPublic: boolean;
 }
 
 const initialFormData: BucketFormData = {
@@ -31,6 +32,7 @@ const initialFormData: BucketFormData = {
   secretAccessKey: "",
   bucketName: "",
   publicUrl: "",
+  isPublic: false,
 };
 
 export function FileManager() {
@@ -69,12 +71,20 @@ export function FileManager() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.isPublic && !formData.publicUrl.trim()) {
+      setTestResult({ success: false, message: t("buckets.publicUrlRequired") });
+      return;
+    }
     setFormLoading(true);
     try {
+      const payload = {
+        ...formData,
+        publicUrl: formData.isPublic ? formData.publicUrl.trim() : "",
+      };
       const response = await fetch("/api/buckets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "create", config: formData }),
+        body: JSON.stringify({ action: "create", config: payload }),
       });
       const data = await response.json();
       if (data.success) {
@@ -250,16 +260,30 @@ export function FileManager() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-text-secondary mb-1.5">
-                    {t("buckets.publicUrl")}
+                  <label className="flex items-center gap-2 text-sm font-medium text-text-secondary">
+                    <input
+                      type="checkbox"
+                      checked={formData.isPublic}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, isPublic: e.target.checked }))}
+                      className="h-4 w-4"
+                    />
+                    {t("buckets.publicMode")}
                   </label>
-                  <input
-                    type="text"
-                    value={formData.publicUrl}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, publicUrl: e.target.value }))}
-                    placeholder="https://cdn.example.com"
-                    className="w-full px-3 py-2 rounded-lg bg-hover-bg border border-border-subtle text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-brand-indigo text-sm"
-                  />
+                  {formData.isPublic && (
+                    <div className="mt-2">
+                      <input
+                        type="text"
+                        value={formData.publicUrl}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, publicUrl: e.target.value }))}
+                        placeholder="https://pub-xxx.r2.dev"
+                        required
+                        className="w-full px-3 py-2 rounded-lg bg-hover-bg border border-border-subtle text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-brand-indigo text-sm"
+                      />
+                      <p className="mt-1.5 text-xs text-text-tertiary">
+                        {t("buckets.publicUrlHint")}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {testResult && (

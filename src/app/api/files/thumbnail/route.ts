@@ -16,6 +16,7 @@ interface CacheEntry {
 const imageCache = new Map<string, CacheEntry>();
 
 const THUMBNAIL_SIZE = 200;
+const MAX_SOURCE_IMAGE_BYTES = 20 * 1024 * 1024;
 const CACHE_TTL = 50 * 60 * 1000;
 const MAX_CACHE_ENTRIES = 500;
 const MAX_CACHE_MEMORY = 100 * 1024 * 1024;
@@ -188,6 +189,19 @@ export async function GET(request: Request) {
 
     if (!response.Body) {
       return NextResponse.json({ error: "Empty response" }, { status: 500 });
+    }
+
+    if (response.ContentLength !== undefined && response.ContentLength > MAX_SOURCE_IMAGE_BYTES) {
+      // Release the unread S3 stream so the underlying socket can be reused.
+      (response.Body as { destroy?: () => void }).destroy?.();
+      const placeholder = await generatePlaceholder("unsupported", size);
+      const data = placeholder.buffer.slice(placeholder.byteOffset, placeholder.byteOffset + placeholder.byteLength) as ArrayBuffer;
+      return new Response(data, {
+        headers: {
+          "Content-Type": "image/webp",
+          "Cache-Control": "public, max-age=86400, immutable",
+        },
+      });
     }
 
     const bytes = await response.Body.transformToByteArray();

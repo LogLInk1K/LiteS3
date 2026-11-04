@@ -425,7 +425,9 @@ export async function testBucketConnection(config: Omit<BucketConfig, "id" | "is
 
 export function getPublicUrl(config: BucketConfig, key: string): string | null {
   if (!config.publicUrl) return null;
-  return `${config.publicUrl.replace(/\/$/, "")}/${key}`;
+  const base = config.publicUrl.replace(/\/+$/, "");
+  const encodedKey = key.split("/").map(encodeURIComponent).join("/");
+  return `${base}/${encodedKey}`;
 }
 
 export async function uploadObject(bucketId: string, key: string, body: Buffer | Uint8Array, contentType: string) {

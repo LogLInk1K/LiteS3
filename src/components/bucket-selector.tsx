@@ -14,6 +14,7 @@ interface Bucket {
   bucketName: string;
   endpoint: string;
   isDefault: boolean;
+  publicUrl?: string | null;
 }
 
 interface BucketFormData {
@@ -24,6 +25,7 @@ interface BucketFormData {
   secretAccessKey: string;
   bucketName: string;
   publicUrl: string;
+  isPublic: boolean;
 }
 
 const initialFormData: BucketFormData = {
@@ -34,6 +36,7 @@ const initialFormData: BucketFormData = {
   secretAccessKey: "",
   bucketName: "",
   publicUrl: "",
+  isPublic: false,
 };
 
 interface BucketSelectorProps {
@@ -133,6 +136,7 @@ export function BucketSelector({ currentBucketId, onBucketChange }: BucketSelect
           secretAccessKey: "",
           bucketName: data.bucket.bucketName || "",
           publicUrl: data.bucket.publicUrl || "",
+          isPublic: !!data.bucket.publicUrl,
         });
         setTestResult(null);
         setShowManager(false);
@@ -151,7 +155,11 @@ export function BucketSelector({ currentBucketId, onBucketChange }: BucketSelect
       const response = await fetch("/api/buckets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "test", config: formData }),
+        body: JSON.stringify({
+          action: "test",
+          config: formData,
+          bucketId: editingId || undefined,
+        }),
       });
 
       const data = await response.json();
@@ -171,21 +179,29 @@ export function BucketSelector({ currentBucketId, onBucketChange }: BucketSelect
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.isPublic && !formData.publicUrl.trim()) {
+      setTestResult({ success: false, message: t("buckets.publicUrlRequired") });
+      return;
+    }
     setFormLoading(true);
 
     try {
+      const payload = {
+        ...formData,
+        publicUrl: formData.isPublic ? formData.publicUrl.trim() : "",
+      };
       let response;
       if (editingId) {
         response = await fetch(`/api/buckets/${editingId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(payload),
         });
       } else {
         response = await fetch("/api/buckets", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "create", config: formData }),
+          body: JSON.stringify({ action: "create", config: payload }),
         });
       }
 
@@ -349,16 +365,30 @@ export function BucketSelector({ currentBucketId, onBucketChange }: BucketSelect
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-text-secondary mb-1.5">
-                    {t("buckets.publicUrl")}
+                  <label className="flex items-center gap-2 text-sm font-medium text-text-secondary">
+                    <input
+                      type="checkbox"
+                      checked={formData.isPublic}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, isPublic: e.target.checked }))}
+                      className="h-4 w-4"
+                    />
+                    {t("buckets.publicMode")}
                   </label>
-                  <input
-                    type="text"
-                    value={formData.publicUrl}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, publicUrl: e.target.value }))}
-                    placeholder="https://cdn.example.com"
-                    className="w-full px-3 py-2 rounded-lg bg-hover-bg border border-border-subtle text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-brand-indigo text-sm"
-                  />
+                  {formData.isPublic && (
+                    <div className="mt-2">
+                      <input
+                        type="text"
+                        value={formData.publicUrl}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, publicUrl: e.target.value }))}
+                        placeholder="https://pub-xxx.r2.dev"
+                        required
+                        className="w-full px-3 py-2 rounded-lg bg-hover-bg border border-border-subtle text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-brand-indigo text-sm"
+                      />
+                      <p className="mt-1.5 text-xs text-text-tertiary">
+                        {t("buckets.publicUrlHint")}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {testResult && (
@@ -420,6 +450,11 @@ export function BucketSelector({ currentBucketId, onBucketChange }: BucketSelect
         >
           <Server className="w-4 h-4 text-brand-indigo" />
           <span className="text-text-primary">{currentBucket?.name || "Select Bucket"}</span>
+          {currentBucket?.publicUrl && (
+            <span className="px-1.5 py-0.5 rounded bg-destructive/10 text-destructive text-xs font-medium">
+              {t("files.publicBadge")}
+            </span>
+          )}
           <ChevronDown className={`w-4 h-4 text-text-tertiary transition-transform ${isOpen ? "rotate-0" : "rotate-90"}`} />
         </button>
 
@@ -435,6 +470,11 @@ export function BucketSelector({ currentBucketId, onBucketChange }: BucketSelect
                   <div className="flex items-center gap-2">
                     <Server className="w-4 h-4 text-text-tertiary" />
                     <span className="text-text-secondary">{bucket.name}</span>
+                    {bucket.publicUrl && (
+                      <span className="px-1 py-0.5 rounded bg-brand-indigo/10 text-brand-indigo text-[10px] font-medium">
+                        {t("files.publicBadge")}
+                      </span>
+                    )}
                   </div>
                   {bucket.id === currentBucket?.id && (
                     <Check className="w-4 h-4 text-brand-indigo" />
@@ -656,16 +696,30 @@ export function BucketSelector({ currentBucketId, onBucketChange }: BucketSelect
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1.5">
-                  {t("buckets.publicUrl")}
+                <label className="flex items-center gap-2 text-sm font-medium text-text-secondary">
+                  <input
+                    type="checkbox"
+                    checked={formData.isPublic}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, isPublic: e.target.checked }))}
+                    className="h-4 w-4"
+                  />
+                  {t("buckets.publicMode")}
                 </label>
-                <input
-                  type="text"
-                  value={formData.publicUrl}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, publicUrl: e.target.value }))}
-                  placeholder="https://cdn.example.com"
-                  className="w-full px-3 py-2 rounded-lg bg-hover-bg border border-border-subtle text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-brand-indigo text-sm"
-                />
+                {formData.isPublic && (
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      value={formData.publicUrl}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, publicUrl: e.target.value }))}
+                      placeholder="https://pub-xxx.r2.dev"
+                      required
+                      className="w-full px-3 py-2 rounded-lg bg-hover-bg border border-border-subtle text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-brand-indigo text-sm"
+                    />
+                    <p className="mt-1.5 text-xs text-text-tertiary">
+                      {t("buckets.publicUrlHint")}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {testResult && (

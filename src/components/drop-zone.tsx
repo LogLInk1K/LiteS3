@@ -2,6 +2,8 @@
 
 import { useCallback, useState } from "react";
 import { useUpload } from "@/hooks/use-upload";
+import { useBuckets } from "@/hooks/use-files";
+import { useFileStore } from "@/store/file-store";
 import { UploadCloud, X, Loader2 } from "lucide-react";
 import { cn, formatBytes } from "@/lib/utils";
 import { useTranslation } from "@/hooks/use-translation";
@@ -10,6 +12,13 @@ export function DropZone() {
   const { activeUploads, uploadFiles, removeUpload } = useUpload();
   const [isDragging, setIsDragging] = useState(false);
   const { t } = useTranslation();
+  const { currentBucketId } = useFileStore();
+  const { data: bucketsData } = useBuckets();
+  const buckets = bucketsData?.buckets || [];
+  const currentBucket = buckets.find((b: { id: string }) => b.id === currentBucketId)
+    || buckets.find((b: { isDefault: boolean }) => b.isDefault)
+    || buckets[0];
+  const isPublic = !!currentBucket?.publicUrl;
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -51,6 +60,11 @@ export function DropZone() {
             <div className="flex flex-col items-center gap-2 text-brand-indigo">
               <UploadCloud className="h-16 w-16" />
               <p className="text-lg font-medium">{t("files.dropToUpload")}</p>
+              {isPublic && (
+                <p className="max-w-md text-center text-sm text-destructive">
+                  {t("files.publicBucketWarning")}
+                </p>
+              )}
             </div>
           </div>
         )}

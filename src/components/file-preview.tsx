@@ -39,6 +39,8 @@ import diff from "react-syntax-highlighter/dist/esm/languages/hljs/diff";
 import plaintext from "react-syntax-highlighter/dist/esm/languages/hljs/plaintext";
 import { useTranslation } from "@/hooks/use-translation";
 
+const MAX_PREVIEW_SIZE = 1024 * 1024;
+
 SyntaxHighlighter.registerLanguage("js", js);
 SyntaxHighlighter.registerLanguage("javascript", js);
 SyntaxHighlighter.registerLanguage("ts", ts);
@@ -164,6 +166,11 @@ export function FilePreview() {
 
     if (!shouldFetchContent) return;
 
+    if (fileItem.size > MAX_PREVIEW_SIZE) {
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -185,7 +192,7 @@ export function FilePreview() {
       setContent(null);
       setError(null);
     };
-  }, [fileItem?.key, currentBucketId]);
+  }, [fileItem?.key, fileItem?.size, currentBucketId]);
 
   const handleClose = useCallback(() => {
     setPreviewItem(null);
@@ -256,7 +263,7 @@ export function FilePreview() {
         <X className="h-5 w-5" />
       </button>
       
-      <div className="w-[900px] h-[650px] max-w-[95vw] max-h-[90vh] flex flex-col bg-bg-panel rounded-xl overflow-hidden shadow-2xl">
+      <div className="w-225 h-162.5 max-w-[95vw] max-h-[90vh] flex flex-col bg-bg-panel rounded-xl overflow-hidden shadow-2xl">
         <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle">
           <div className="flex items-center gap-3 min-w-0">
             <span className="text-text-primary font-medium truncate">
@@ -266,7 +273,11 @@ export function FilePreview() {
         </div>
 
         <div className="flex-1 min-h-0 overflow-auto">
-          {loading ? (
+          {fileItem.size > MAX_PREVIEW_SIZE ? (
+            <div className="flex items-center justify-center h-full text-text-tertiary text-sm">
+              {t("files.previewTooLarge")}
+            </div>
+          ) : loading ? (
             <div className="flex items-center justify-center h-full">
               <Loader2 className="h-6 w-6 animate-spin text-text-tertiary" />
             </div>
@@ -553,7 +564,7 @@ function ImageLightbox({
           border: '1px solid rgba(255,255,255,0.1)'
         }}
       >
-        <span className="text-sm truncate max-w-[200px] sm:max-w-[300px]" style={{ color: '#d0d6e0' }}>{fileName}</span>
+        <span className="text-sm truncate max-w-50 sm:max-w-75" style={{ color: '#d0d6e0' }}>{fileName}</span>
       </div>
 
       {!loaded && (
@@ -638,7 +649,7 @@ function VideoLightbox({
           border: '1px solid rgba(255,255,255,0.1)'
         }}
       >
-        <span className="text-sm truncate max-w-[200px] sm:max-w-[300px]" style={{ color: '#d0d6e0' }}>{fileName}</span>
+        <span className="text-sm truncate max-w-50 sm:max-w-75" style={{ color: '#d0d6e0' }}>{fileName}</span>
       </div>
 
       {!loaded && (

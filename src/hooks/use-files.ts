@@ -69,7 +69,13 @@ async function deleteFile(key: string, bucketId?: string | null) {
   return res.json();
 }
 
-async function getFileLink(key: string, expiresIn: number = 3600, bucketId?: string | null) {
+export interface FileLinkResponse {
+  url: string;
+  permanent: boolean;
+  expiresIn?: number;
+}
+
+async function getFileLink(key: string, expiresIn: number = 3600, bucketId?: string | null): Promise<FileLinkResponse> {
   const url = new URL("/api/files/link", window.location.origin);
   url.searchParams.set("key", key);
   url.searchParams.set("expiresIn", String(expiresIn));

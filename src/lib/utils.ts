@@ -77,6 +77,7 @@ const CONNECTION_ERROR_MAP: Record<string, string> = {
   ENDPOINT_REQUIRED: "buckets.errorEndpointRequired",
   ACCESS_KEY_REQUIRED: "buckets.errorAccessKeyRequired",
   SECRET_KEY_REQUIRED: "buckets.errorSecretKeyRequired",
+  CREDENTIALS_PAIR_REQUIRED: "buckets.errorCredentialsPairRequired",
   ENDPOINT_UNREACHABLE: "buckets.errorEndpointUnreachable",
   INVALID_CREDENTIALS: "buckets.errorInvalidCredentials",
   BUCKET_NOT_FOUND: "buckets.errorBucketNotFound",
