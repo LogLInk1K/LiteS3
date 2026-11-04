@@ -443,19 +443,14 @@ export function BucketSelector({ currentBucketId, onBucketChange }: BucketSelect
 
   return (
     <>
-      <div ref={dropdownRef} className="relative">
+      <div ref={dropdownRef} className="relative min-w-0 max-w-full">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 px-3 h-9 rounded-lg bg-hover-bg hover:bg-surface-elevated transition-colors text-sm"
+          className="flex items-center gap-2 px-3 h-9 min-w-0 max-w-full rounded-lg bg-hover-bg hover:bg-surface-elevated transition-colors text-sm"
         >
-          <Server className="w-4 h-4 text-brand-indigo" />
-          <span className="text-text-primary">{currentBucket?.name || "Select Bucket"}</span>
-          {currentBucket?.publicUrl && (
-            <span className="px-1.5 py-0.5 rounded bg-destructive/10 text-destructive text-xs font-medium">
-              {t("files.publicBadge")}
-            </span>
-          )}
-          <ChevronDown className={`w-4 h-4 text-text-tertiary transition-transform ${isOpen ? "rotate-0" : "rotate-90"}`} />
+          <Server className="w-4 h-4 shrink-0 text-brand-indigo" />
+          <span className="text-text-primary truncate max-sm:hidden">{currentBucket?.name || "Select Bucket"}</span>
+          <ChevronDown className={`w-4 h-4 shrink-0 text-text-tertiary transition-transform ${isOpen ? "rotate-0" : "rotate-90"}`} />
         </button>
 
         {isOpen && (
@@ -467,17 +462,17 @@ export function BucketSelector({ currentBucketId, onBucketChange }: BucketSelect
                   onClick={() => handleSelect(bucket.id)}
                   className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-hover-bg rounded-md transition-colors"
                 >
-                  <div className="flex items-center gap-2">
-                    <Server className="w-4 h-4 text-text-tertiary" />
-                    <span className="text-text-secondary">{bucket.name}</span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Server className="w-4 h-4 shrink-0 text-text-tertiary" />
+                    <span className="text-text-secondary truncate min-w-0">{bucket.name}</span>
                     {bucket.publicUrl && (
-                      <span className="px-1 py-0.5 rounded bg-brand-indigo/10 text-brand-indigo text-[10px] font-medium">
+                      <span className="px-1 py-0.5 rounded bg-brand-indigo/10 text-brand-indigo text-[10px] font-medium shrink-0">
                         {t("files.publicBadge")}
                       </span>
                     )}
                   </div>
                   {bucket.id === currentBucket?.id && (
-                    <Check className="w-4 h-4 text-brand-indigo" />
+                    <Check className="w-4 h-4 shrink-0 text-brand-indigo" />
                   )}
                 </button>
               ))}
