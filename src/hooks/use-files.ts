@@ -224,11 +224,68 @@ export function useResolvedFileLinks(publicUrl?: string | null) {
   );
 }
 
+const OBJECT_URL_CACHE_PREFIX = "lites3:object-url:";
+// Stay slightly below the 1h presigned URL lifetime to avoid using an expired URL.
+const OBJECT_URL_CACHE_TTL = 55 * 60 * 1000;
+
+function objectUrlCacheKey(bucketId: string | null, key: string) {
+  return `${OBJECT_URL_CACHE_PREFIX}${bucketId ?? "default"}:${key}`;
+}
+
+/** Presigned URLs change on every signing. Persisting them keeps the URL - and
+ * therefore the browser's HTTP cache key - stable across page reloads. */
+function readCachedObjectUrls(bucketId: string | null, keys: string[]): Map<string, string> {
+  const cached = new Map<string, string>();
+  if (typeof window === "undefined") return cached;
+  try {
+    for (const key of keys) {
+      const cacheKey = objectUrlCacheKey(bucketId, key);
+      const raw = window.sessionStorage.getItem(cacheKey);
+      if (!raw) continue;
+      const entry = JSON.parse(raw) as { url: string; expiresAt: number };
+      if (!entry.url || entry.expiresAt <= Date.now()) {
+        window.sessionStorage.removeItem(cacheKey);
+        continue;
+      }
+      cached.set(key, entry.url);
+    }
+  } catch {
+    // Storage unavailable (privacy mode / corrupted entry): re-sign instead.
+  }
+  return cached;
+}
+
+function writeCachedObjectUrls(bucketId: string | null, links: BatchFileLink[]) {
+  if (typeof window === "undefined") return;
+  try {
+    const expiresAt = Date.now() + OBJECT_URL_CACHE_TTL;
+    for (const link of links) {
+      if (!link.url) continue;
+      window.sessionStorage.setItem(
+        objectUrlCacheKey(bucketId, link.key),
+        JSON.stringify({ url: link.url, expiresAt }),
+      );
+    }
+  } catch {
+    // Quota or privacy mode: persistence is best-effort.
+  }
+}
+
+async function getStableObjectUrls(keys: string[], bucketId?: string | null): Promise<BatchFileLink[]> {
+  const cached = readCachedObjectUrls(bucketId ?? null, keys);
+  const resolved: BatchFileLink[] = Array.from(cached, ([key, url]) => ({ key, url, permanent: false }));
+  const missing = keys.filter((key) => !cached.has(key));
+  if (missing.length === 0) return resolved;
+
+  const fresh = await getFileLinks(missing, 3600, bucketId, false);
+  writeCachedObjectUrls(bucketId ?? null, fresh);
+  return [...resolved, ...fresh];
+}
+
 /**
  * Resolves object URLs for a page of images. Public buckets are built locally
- * with zero requests; private buckets need exactly one batched presigning call.
- * URLs are cached so re-renders and page switches can reuse them from the
- * browser's HTTP cache instead of re-signing.
+ * with zero requests; private buckets reuse persisted presigned URLs so a reload
+ * neither re-signs nor re-downloads the images.
  */
 export function useThumbnailUrls(
   keys: string[],
@@ -237,7 +294,7 @@ export function useThumbnailUrls(
 ): Record<string, string> {
   const { data } = useQuery({
     queryKey: ["thumbnail-urls", bucketId ?? null, keys],
-    queryFn: () => getFileLinks(keys, 3600, bucketId, false),
+    queryFn: () => getStableObjectUrls(keys, bucketId),
     enabled: keys.length > 0 && !publicUrl,
     staleTime: 30 * 60 * 1000,
   });
