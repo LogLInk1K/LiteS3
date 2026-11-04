@@ -77,16 +77,32 @@ export interface FileLinkResponse {
   expiresIn?: number;
 }
 
-async function getFileLink(key: string, expiresIn: number = 3600, bucketId?: string | null): Promise<FileLinkResponse> {
+export interface BatchFileLink extends FileLinkResponse {
+  key: string;
+}
+
+async function getFileLink(key: string, expiresIn: number = 3600, bucketId?: string | null, download = false): Promise<FileLinkResponse> {
   const url = new URL("/api/files/link", window.location.origin);
   url.searchParams.set("key", key);
   url.searchParams.set("expiresIn", String(expiresIn));
+  if (download) url.searchParams.set("download", "1");
   if (bucketId) {
     url.searchParams.set("bucketId", bucketId);
   }
   const res = await fetch(url.toString());
   if (!res.ok) throw new Error("Failed to get file link");
   return res.json();
+}
+
+async function getFileLinks(keys: string[], expiresIn: number = 3600, bucketId?: string | null, download = false): Promise<BatchFileLink[]> {
+  const res = await fetch("/api/files/link", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ keys, expiresIn, bucketId, download }),
+  });
+  if (!res.ok) throw new Error("Failed to get file links");
+  const data = await res.json();
+  return data.links;
 }
 
 async function moveFile({ sourceKey, destKey, bucketId }: { sourceKey: string; destKey: string; bucketId?: string | null }) {
@@ -170,25 +186,41 @@ export function useDeleteFile() {
 
 export function useFileLink() {
   return useMutation({
-    mutationFn: ({ key, expiresIn, bucketId }: { key: string; expiresIn?: number; bucketId?: string | null }) =>
-      getFileLink(key, expiresIn, bucketId),
+    mutationFn: ({ key, expiresIn, bucketId, download }: { key: string; expiresIn?: number; bucketId?: string | null; download?: boolean }) =>
+      getFileLink(key, expiresIn, bucketId, download),
   });
 }
 
-/**
- * Public buckets have permanent anonymous URLs, so they can be built locally
- * with zero API calls. Private buckets still need a server-side presigned URL.
- */
+/** Public buckets resolve locally unless a forced download needs a signed URL. */
 export function useResolvedFileLink(publicUrl?: string | null) {
   const { mutateAsync } = useFileLink();
 
   return useCallback(
-    async (key: string, bucketId?: string | null): Promise<FileLinkResponse> => {
-      const direct = buildPublicUrl(publicUrl, key);
-      if (direct) return { url: direct, permanent: true };
-      return mutateAsync({ key, bucketId });
+    async (key: string, bucketId?: string | null, download = false): Promise<FileLinkResponse> => {
+      if (!download) {
+        const direct = buildPublicUrl(publicUrl, key);
+        if (direct) return { url: direct, permanent: true };
+      }
+      return mutateAsync({ key, bucketId, download });
     },
     [publicUrl, mutateAsync],
+  );
+}
+
+/** One request for the whole batch; public buckets stay local unless downloading. */
+export function useResolvedFileLinks(publicUrl?: string | null) {
+  return useCallback(
+    async (keys: string[], bucketId?: string | null, download = false): Promise<BatchFileLink[]> => {
+      if (!download && publicUrl) {
+        return keys.map((key) => ({
+          key,
+          url: buildPublicUrl(publicUrl, key)!,
+          permanent: true,
+        }));
+      }
+      return getFileLinks(keys, 3600, bucketId, download);
+    },
+    [publicUrl],
   );
 }
 

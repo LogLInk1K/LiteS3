@@ -1,7 +1,7 @@
 "use client";
 
 import { useFileStore, FileOrFolder } from "@/store/file-store";
-import { useFiles, useMoveFile, useCopyFile, useBuckets, useResolvedFileLink } from "@/hooks/use-files";
+import { useFiles, useMoveFile, useCopyFile, useBuckets, useResolvedFileLinks } from "@/hooks/use-files";
 import { useUpload } from "@/hooks/use-upload";
 import { useSelectionBox } from "@/hooks/use-selection-box";
 import { FileCard, FileCardSkeleton } from "./file-card";
@@ -15,7 +15,7 @@ import { Button } from "./ui/button";
 import { useRef, useCallback, useState, useEffect } from "react";
 import { useTranslation } from "@/hooks/use-translation";
 import { useQueryClient } from "@tanstack/react-query";
-import { cn } from "@/lib/utils";
+import { cn, triggerDownload } from "@/lib/utils";
 
 const PAGE_SIZE = 30;
 
@@ -37,7 +37,7 @@ export function FileTable() {
   const currentBucket = buckets.find((b: { id: string }) => b.id === currentBucketId)
     || buckets.find((b: { isDefault: boolean }) => b.isDefault)
     || buckets[0];
-  const resolveLink = useResolvedFileLink(currentBucket?.publicUrl);
+  const resolveLinks = useResolvedFileLinks(currentBucket?.publicUrl);
   const moveMutation = useMoveFile();
   const copyMutation = useCopyFile();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -114,11 +114,20 @@ export function FileTable() {
 
   const handleBatchDownload = async () => {
     const keys = Array.from(selectedItems);
-    for (const key of keys) {
-      const result = await resolveLink(key, currentBucketId);
-      if (result.url) {
-        window.open(result.url, "_blank");
+    if (keys.length === 0) return;
+
+    const batchSize = 500; // keep in sync with MAX_BATCH_KEYS on the server
+    try {
+      for (let i = 0; i < keys.length; i += batchSize) {
+        const links = await resolveLinks(keys.slice(i, i + batchSize), currentBucketId, true);
+        for (const link of links) {
+          if (link.url) {
+            triggerDownload(link.url);
+          }
+        }
       }
+    } catch (error) {
+      console.error("Batch download failed:", error);
     }
   };
 

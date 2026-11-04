@@ -5,7 +5,7 @@ import { useFileStore } from "@/store/file-store";
 import { useResolvedFileLink, useBuckets } from "@/hooks/use-files";
 import { useTranslation } from "@/hooks/use-translation";
 import { Pencil, Trash2, Copy, Move, Link, Download, Eye } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, triggerDownload } from "@/lib/utils";
 
 export function ContextMenu() {
   const { contextMenu, closeContextMenu, setPreviewItem, openRenameDialog, openMoveDialog, openCopyDialog, startDelete, currentBucketId } = useFileStore();
@@ -62,9 +62,9 @@ export function ContextMenu() {
 
   const handleDownload = async () => {
     closeContextMenu();
-    const result = await resolveLink(item.key, currentBucketId);
+    const result = await resolveLink(item.key, currentBucketId, true);
     if (result.url) {
-      window.open(result.url, "_blank");
+      triggerDownload(result.url);
     }
   };
 

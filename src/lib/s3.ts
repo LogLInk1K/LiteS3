@@ -399,17 +399,30 @@ export async function getPresignedUploadUrl(bucketId: string, key: string, conte
   return getSignedUrl(client, command, { expiresIn });
 }
 
-export async function getPresignedDownloadUrl(bucketId: string, key: string, expiresIn: number = 3600) {
-  const config = await getBucketConfig(bucketId);
-  if (!config) throw new Error("Bucket not found");
-  return getPresignedDownloadUrlForConfig(config, key, expiresIn);
+export function buildContentDisposition(key: string): string {
+  const fileName = key.split("/").filter(Boolean).pop() || "download";
+  const asciiFallback = fileName.replace(/[^\x20-\x7e]/g, "_").replace(/["\\]/g, "_");
+  return `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(fileName)}`;
 }
 
-export async function getPresignedDownloadUrlForConfig(config: BucketConfig, key: string, expiresIn: number = 3600) {
+export async function getPresignedDownloadUrl(bucketId: string, key: string, expiresIn: number = 3600, forceDownload = false) {
+  const config = await getBucketConfig(bucketId);
+  if (!config) throw new Error("Bucket not found");
+  return getPresignedDownloadUrlForConfig(config, key, expiresIn, forceDownload);
+}
+
+export async function getPresignedDownloadUrlForConfig(
+  config: BucketConfig,
+  key: string,
+  expiresIn: number = 3600,
+  forceDownload = false,
+) {
   const client = createS3Client(config);
   const command = new GetObjectCommand({
     Bucket: config.bucketName,
     Key: key,
+    // S3 response-header override: forces a real download instead of an inline preview.
+    ...(forceDownload ? { ResponseContentDisposition: buildContentDisposition(key) } : {}),
   });
 
   return getSignedUrl(client, command, { expiresIn });

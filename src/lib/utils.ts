@@ -88,3 +88,13 @@ const CONNECTION_ERROR_MAP: Record<string, string> = {
 export function mapConnectionError(code: string, t: (key: string) => string): string {
   return t(CONNECTION_ERROR_MAP[code] || "buckets.connectionFailed");
 }
+
+/** Triggers a download from a URL that already returns Content-Disposition: attachment. */
+export function triggerDownload(url: string) {
+  const link = document.createElement("a");
+  link.href = url;
+  link.style.display = "none";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
