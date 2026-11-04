@@ -11,7 +11,7 @@ import { NewFolderDialog } from "./dialogs/new-folder-dialog";
 import { RenameDialog } from "./dialogs/rename-dialog";
 import { MoveCopyDialog } from "./dialogs/move-copy-dialog";
 import { DeleteProgressDialog } from "./dialogs/delete-progress-dialog";
-import { LayoutGrid, List, ChevronRight, ChevronLeft, HardDrive, Upload, X, Download, Move, Copy, Trash2, FolderPlus, RotateCw, ChevronDown } from "lucide-react";
+import { LayoutGrid, List, ChevronRight, ChevronLeft, HardDrive, Upload, X, Download, Move, Copy, Trash2, FolderPlus, RotateCw } from "lucide-react";
 import { Button } from "./ui/button";
 import { useRef, useCallback, useState, useEffect, type CSSProperties } from "react";
 import { useTranslation } from "@/hooks/use-translation";
@@ -266,9 +266,11 @@ export function FileTable() {
     clearSelection();
   };
 
+  // minmax(0,1fr) pins the single grid column to the container: without it the track grows to the toolbar's min-content width and the right-hand actions get pushed past the viewport.
   return (
-    <div className="grid grid-rows-[auto_auto_1fr_auto] h-full max-h-full min-h-0">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-border-subtle bg-bg-panel">
+    <div className="grid grid-cols-[minmax(0,1fr)] grid-rows-[auto_auto_1fr_auto] h-full max-h-full min-h-0">
+      <div className="flex items-center gap-2 min-w-0 px-4 max-sm:px-3 py-3 border-b border-border-subtle bg-bg-panel">
+        {/* size="icon" already gives h-9 w-9, the same footprint as the rest of the row */}
         <Button
           variant="ghost"
           size="icon"
@@ -276,7 +278,7 @@ export function FileTable() {
             if (pathStack.length > 0) navigateUp();
           }}
           disabled={pathStack.length === 0}
-          className="h-8 w-8 rounded-lg disabled:opacity-50"
+          className="hidden md:inline-flex"
         >
           <HardDrive className="h-4 w-4" />
         </Button>
@@ -316,15 +318,19 @@ export function FileTable() {
             })}
           </div>
 
-          <div ref={pathDropdownRef} className="relative md:hidden flex-1 min-w-0">
+          {/* Narrow screens show the folder name inside a fixed-width chip: the label truncates, the chip never resizes with it */}
+          <div ref={pathDropdownRef} className="relative w-28 sm:w-32 min-w-0 md:hidden">
             <button
               onClick={() => setShowPathDropdown(!showPathDropdown)}
-              className="flex items-center gap-1 text-text-primary hover:text-text-primary transition-colors truncate w-full text-left"
+              aria-haspopup="menu"
+              aria-expanded={showPathDropdown}
+              className="flex items-center gap-1.5 h-9 w-full min-w-0 px-2.5 max-sm:gap-1 max-sm:px-2 rounded-lg border border-border-subtle bg-surface-elevated text-text-secondary hover:text-text-primary hover:border-brand-indigo transition-colors"
             >
-              <span className="truncate">
+              <HardDrive className="h-4 w-4 shrink-0" />
+              <span className="text-xs flex-1 min-w-0 truncate">
                 {pathParts.length > 0 ? pathParts[pathParts.length - 1] : t("files.root")}
               </span>
-              <ChevronDown className={`h-3 w-3 shrink-0 transition-transform ${showPathDropdown ? "rotate-180" : ""}`} />
+              <ChevronLeft className={`h-4 w-4 shrink-0 transition-transform duration-200 ${showPathDropdown ? "-rotate-90" : ""}`} />
             </button>
             {showPathDropdown && (
               <div className="absolute top-full left-0 mt-1 bg-surface-elevated rounded-lg border border-border-subtle shadow-lg z-50 min-w-48 max-w-64">
@@ -367,11 +373,11 @@ export function FileTable() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0 max-md:gap-2">
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="h-9 w-9 rounded-md border border-border-subtle text-text-secondary hover:text-text-primary hover:bg-hover-bg transition-colors flex items-center justify-center disabled:opacity-50"
+            className="h-9 w-9 rounded-lg border border-border-subtle text-text-secondary hover:text-text-primary hover:bg-hover-bg transition-colors flex items-center justify-center disabled:opacity-50"
             title={t("files.refresh")}
           >
             <RotateCw 
@@ -379,10 +385,11 @@ export function FileTable() {
               style={{ transform: `rotate(${rotation}deg)` }}
             />
           </button>
-          <div className="flex items-center gap-1 p-1 bg-surface-elevated rounded-lg border border-border-subtle">
+          {/* h-9 + p-1 keeps the group exactly 36px like the refresh / new folder / upload controls, and the transparent background matches the refresh button */}
+          <div className="flex items-center gap-1 h-9 p-1 rounded-lg border border-border-subtle">
             <button
               onClick={() => setViewMode("grid")}
-              className={`h-7 w-7 rounded-md flex items-center justify-center transition-colors ${
+              className={`h-full w-7 rounded-md flex items-center justify-center transition-colors ${
                 viewMode === "grid" ? "bg-hover-bg text-text-primary" : "text-text-tertiary hover:bg-hover-bg"
               }`}
             >
@@ -390,7 +397,7 @@ export function FileTable() {
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`h-7 w-7 rounded-md flex items-center justify-center transition-colors ${
+              className={`h-full w-7 rounded-md flex items-center justify-center transition-colors ${
                 viewMode === "list" ? "bg-hover-bg text-text-primary" : "text-text-tertiary hover:bg-hover-bg"
               }`}
             >
@@ -399,7 +406,7 @@ export function FileTable() {
           </div>
           <button
             onClick={openNewFolderDialog}
-            className="flex items-center gap-1.5 px-3 h-9 rounded-md border border-border-subtle text-text-secondary hover:text-text-primary hover:bg-hover-bg text-sm transition-colors"
+            className="flex items-center gap-1.5 px-3 h-9 rounded-lg border border-border-subtle text-text-secondary hover:text-text-primary hover:bg-hover-bg text-sm transition-colors"
           >
             <FolderPlus className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">{t("files.newFolder")}</span>
@@ -418,7 +425,7 @@ export function FileTable() {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1.5 px-3 h-9 rounded-md bg-brand-indigo text-white text-sm font-medium hover:bg-accent-violet transition-colors"
+            className="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-brand-indigo text-white text-sm font-medium hover:bg-accent-violet transition-colors"
           >
             <Upload className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">{t("common.upload")}</span>
