@@ -449,7 +449,7 @@ export function BucketSelector({ currentBucketId, onBucketChange }: BucketSelect
           className="flex items-center gap-2 px-3 h-9 min-w-0 max-w-full rounded-lg bg-hover-bg hover:bg-surface-elevated transition-colors text-sm"
         >
           <Server className="w-4 h-4 shrink-0 text-brand-indigo" />
-          <span className="text-text-primary truncate max-sm:hidden">{currentBucket?.name || "Select Bucket"}</span>
+          <span className="text-text-primary truncate">{currentBucket?.name || "Select Bucket"}</span>
           <ChevronDown className={`w-4 h-4 shrink-0 text-text-tertiary transition-transform ${isOpen ? "rotate-0" : "rotate-90"}`} />
         </button>
 

@@ -2,7 +2,6 @@ export const translations = {
   en: {
     common: {
       search: "Search files...",
-      searchShort: "Search",
       upload: "Upload",
       signOut: "Sign Out",
       github: "GitHub repository",
@@ -185,7 +184,6 @@ export const translations = {
   zh: {
     common: {
       search: "搜索文件...",
-      searchShort: "搜索",
       upload: "上传",
       signOut: "退出登录",
       github: "GitHub 仓库",
