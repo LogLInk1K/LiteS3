@@ -540,7 +540,7 @@ export function FileTable() {
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-4 py-2 border-t border-border-subtle bg-bg-panel">
-          <span className="text-xs text-text-quaternary">
+          <span className="text-sm text-text-quaternary">
             {filteredItems.length} {t("files.items")}, {t("files.page")} {safePage}/{totalPages}
           </span>
           <div className="flex items-center gap-1">
@@ -555,13 +555,13 @@ export function FileTable() {
             </Button>
             {generatePageNumbers(safePage, totalPages).map((p, i) =>
               p === "..." ? (
-                <span key={`ellipsis-${i}`} className="px-1 text-xs text-text-quaternary">…</span>
+                <span key={`ellipsis-${i}`} className="px-1 text-sm text-text-quaternary">…</span>
               ) : (
                 <Button
                   key={p}
                   variant={safePage === p ? "secondary" : "ghost"}
                   size="icon"
-                  className="h-7 w-7 text-xs rounded-lg"
+                  className="h-7 w-7 rounded-lg"
                   onClick={() => setCurrentPage(p as number)}
                 >
                   {p}
