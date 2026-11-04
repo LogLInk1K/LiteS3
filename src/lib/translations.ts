@@ -46,6 +46,8 @@ export const translations = {
     },
     files: {
       emptyFolder: "Empty folder",
+      noSearchResults: "No matching files",
+      typeToSearch: "Type a name to search this folder",
       dragDrop: "Drag and drop files to upload",
       name: "Name",
       size: "Size",
@@ -228,6 +230,8 @@ export const translations = {
     },
     files: {
       emptyFolder: "空文件夹",
+      noSearchResults: "没有匹配的文件",
+      typeToSearch: "输入名称即可搜索当前目录",
       dragDrop: "拖放文件以上传",
       name: "名称",
       size: "大小",

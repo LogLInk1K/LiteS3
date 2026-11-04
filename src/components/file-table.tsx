@@ -151,6 +151,9 @@ export function FileTable() {
     const container = containerRef.current;
     if (!container) return;
 
+    // Kept across observations so an on-screen keyboard can't reshuffle the page.
+    let lastSize = { width: 0, height: 0 };
+
     const measure = () => {
       const style = getComputedStyle(container);
       const width = container.clientWidth
@@ -159,6 +162,11 @@ export function FileTable() {
       const height = container.clientHeight
         - parseFloat(style.paddingTop || "0")
         - parseFloat(style.paddingBottom || "0");
+      // A keyboard steals height while the width stays put. Re-paginating for that swaps
+      // the visible slice and clamps scrollTop, which looks like "back to top" afterwards.
+      // Address-bar show/hide moves well under 140px, so it still re-measures normally.
+      if (width < 640 && width === lastSize.width && Math.abs(lastSize.height - height) > 140) return;
+      lastSize = { width, height };
       const next = measureGrid(width, height);
       setGrid((prev) =>
         prev.columns === next.columns &&
@@ -223,6 +231,13 @@ export function FileTable() {
     .filter((item) => item.type !== "folder" && isThumbnailable(item.name))
     .map((item) => item.key);
   const thumbnailUrls = useThumbnailUrls(mediaKeys, currentBucketId, currentBucket?.publicUrl);
+
+  // Swapping the slice keeps the scroller's offset, so a page opened after scrolling
+  // down would start mid-list. Reset whenever the visible set is replaced - note the
+  // grid metrics are deliberately absent, so the on-screen keyboard never moves it.
+  useEffect(() => {
+    containerRef.current?.scrollTo(0, 0);
+  }, [safePage, currentPrefix, currentBucketId, viewMode, searchQuery]);
 
   const pathParts = currentPrefix.split("/").filter(Boolean);
 

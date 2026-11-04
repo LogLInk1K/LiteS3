@@ -33,6 +33,8 @@
   --color-bg-panel: var(--bg-panel);
   --color-surface-elevated: var(--surface-level-3);
   --color-surface-secondary: var(--surface-secondary);
+  /* Without this token bg-overlay-primary compiles to nothing and every overlay loses its dim */
+  --color-overlay-primary: var(--overlay-primary);
   
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);

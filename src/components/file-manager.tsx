@@ -113,7 +113,7 @@ export function FileManager() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-screen bg-bg-marketing">
+      <div className="flex flex-col flex-1 min-h-0 bg-bg-marketing">
         <div className="flex-1 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-brand-indigo" />
         </div>
@@ -123,7 +123,7 @@ export function FileManager() {
 
   if (error) {
     return (
-      <div className="flex flex-col h-screen bg-bg-marketing">
+      <div className="flex flex-col flex-1 min-h-0 bg-bg-marketing">
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <p className="text-text-primary text-lg">{t("common.failedToLoad")}</p>
@@ -136,7 +136,7 @@ export function FileManager() {
 
   if (buckets.length === 0) {
     return (
-      <div className="flex flex-col h-screen bg-bg-marketing">
+      <div className="flex flex-col flex-1 min-h-0 bg-bg-marketing">
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="max-w-md text-center">
             <div className="w-16 h-16 rounded-2xl bg-hover-bg border border-border-subtle flex items-center justify-center mx-auto mb-6">
@@ -337,7 +337,7 @@ export function FileManager() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-bg-marketing overflow-hidden">
+    <div className="flex flex-col flex-1 min-h-0 bg-bg-marketing overflow-hidden">
       <div className="flex-1 overflow-hidden">
         <FileTable />
       </div>

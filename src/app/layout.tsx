@@ -47,6 +47,8 @@ export default async function RootLayout({
   return (
     <html lang={initialLanguage === "en" ? "en" : "zh-CN"} suppressHydrationWarning>
       <head>
+        {/* Chrome 115+: let the on-screen keyboard overlay the page instead of resizing the layout viewport or scrolling the document to reveal the focused field. Other engines ignore the tag. */}
+        <meta name="interactive-widget" content="overlays-content" />
         <Script id="theme-init" strategy="beforeInteractive">{themeScript}</Script>
         <Script id="vt-error-suppress" strategy="beforeInteractive">{viewTransitionErrorScript}</Script>
       </head>
