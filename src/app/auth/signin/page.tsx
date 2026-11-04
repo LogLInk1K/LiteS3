@@ -20,7 +20,9 @@ export default async function SignInPage() {
 
   return (
     <div className="min-h-screen flex bg-bg-marketing relative overflow-hidden">
-      <div className="fixed top-4 right-4 z-50">
+      {/* Same offsets as the signed-in navbar: its py-3/px-4 leave the h-9 cluster 12px
+          from the top and 16px from the right, so the icons do not jump after login. */}
+      <div className="fixed top-3 right-4 z-50">
         <ThemeMenu />
       </div>
 

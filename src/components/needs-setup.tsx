@@ -9,7 +9,8 @@ export function NeedsSetup() {
 
   return (
     <div className="min-h-screen bg-bg-marketing flex items-center justify-center p-4">
-      <div className="fixed top-4 right-4 z-50">
+      {/* Offsets mirror the navbar (py-3 / px-4) so the cluster sits where it does when signed in. */}
+      <div className="fixed top-3 right-4 z-50">
         <ThemeMenu />
       </div>
       <div className="w-full max-w-sm">
