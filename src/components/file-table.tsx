@@ -488,7 +488,7 @@ export function FileTable() {
       >
         {isLoading || isRefreshing ? (
           <div className="grid" style={gridStyle}>
-            {Array.from({ length: 12 }).map((_, i) => (
+            {Array.from({ length: pageSize }).map((_, i) => (
               <FileCardSkeleton key={i} />
             ))}
           </div>
