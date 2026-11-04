@@ -150,13 +150,19 @@ export function FilePreview() {
   const fileItem = isFile ? (previewItem as FileItem) : null;
   const isImage = fileItem ? isImageFile(fileItem.name) : false;
   const isVideo = fileItem ? isVideoFile(fileItem.name) : false;
+  // Only text-like previews pull the whole object into memory. Audio is
+  // streamed by the browser, so it must not inherit this size cap.
+  const needsFullContent = fileItem
+    ? isCodeFile(fileItem.name) || isMarkdownFile(fileItem.name) || isTextFile(fileItem.name)
+    : false;
 
   useEffect(() => {
     if (!fileItem) return;
 
-    const shouldFetchContent = isCodeFile(fileItem.name) || isMarkdownFile(fileItem.name) || isTextFile(fileItem.name);
-
-    if (!shouldFetchContent) return;
+    if (!needsFullContent) {
+      setLoading(false);
+      return;
+    }
 
     if (fileItem.size > MAX_PREVIEW_SIZE) {
       setLoading(false);
@@ -184,7 +190,7 @@ export function FilePreview() {
       setContent(null);
       setError(null);
     };
-  }, [fileItem?.key, fileItem?.size, currentBucketId]);
+  }, [fileItem?.key, fileItem?.size, currentBucketId, needsFullContent]);
 
   const handleClose = useCallback(() => {
     setPreviewItem(null);
@@ -265,7 +271,7 @@ export function FilePreview() {
         </div>
 
         <div className="flex-1 min-h-0 overflow-auto">
-          {fileItem.size > MAX_PREVIEW_SIZE ? (
+          {needsFullContent && fileItem.size > MAX_PREVIEW_SIZE ? (
             <div className="flex items-center justify-center h-full text-text-tertiary text-sm">
               {t("files.previewTooLarge")}
             </div>
