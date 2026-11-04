@@ -20,13 +20,39 @@ async function fetchBuckets() {
   return res.json();
 }
 
-async function requestUploadUrl({ key, contentType }: { key: string; contentType: string }) {
+export interface UploadUrlRequest {
+  key: string;
+  contentType: string;
+  size: number;
+  bucketId?: string | null;
+}
+
+export interface UploadUrlResponse {
+  url: string;
+  key: string;
+  contentType: string;
+  expiresIn: number;
+  method: "PUT";
+}
+
+export async function requestUploadUrl({
+  key,
+  contentType,
+  size,
+  bucketId,
+}: UploadUrlRequest): Promise<UploadUrlResponse> {
   const res = await fetch("/api/files/upload", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ key, contentType }),
+    body: JSON.stringify({ key, contentType, size, bucketId }),
   });
-  if (!res.ok) throw new Error("Failed to get upload URL");
+  if (!res.ok) {
+    const message = await res
+      .json()
+      .then((data) => data.error)
+      .catch(() => null);
+    throw new Error(message || `Failed to get upload URL (${res.status})`);
+  }
   return res.json();
 }
 

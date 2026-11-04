@@ -70,6 +70,9 @@ export function createS3Client(config: BucketConfig): S3Client {
       secretAccessKey: config.secretAccessKey,
     },
     forcePathStyle: !config.endpoint.includes("amazonaws.com"),
+    // Otherwise the SDK injects x-amz-checksum-* into presigned PUT URLs,
+    // which fails browser direct uploads and breaks S3-compatible endpoints.
+    requestChecksumCalculation: "WHEN_REQUIRED",
   });
 
   evictOldestClient();

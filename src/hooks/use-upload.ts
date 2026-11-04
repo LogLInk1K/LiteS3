@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useFileStore } from "@/store/file-store";
 import { useQueryClient } from "@tanstack/react-query";
 import { parallelWithLimit } from "@/lib/concurrent";
+import { requestUploadUrl } from "@/hooks/use-files";
 
 interface UploadItem {
   id: string;
@@ -15,7 +16,27 @@ interface UploadItem {
 }
 
 const MAX_CONCURRENT_UPLOADS = 3;
+const MAX_SINGLE_PUT_SIZE = 5 * 1024 * 1024 * 1024;
+const DEFAULT_CONTENT_TYPE = "application/octet-stream";
 const DONE_ITEM_TTL = 30_000;
+
+function describeUploadError(xhr: XMLHttpRequest): string {
+  if (xhr.status === 0) {
+    return "Network error or request blocked by CORS";
+  }
+  const text = xhr.responseText?.trim();
+  if (text) {
+    const s3Code = /<Code>([^<]+)<\/Code>/.exec(text)?.[1];
+    if (s3Code) return `Upload failed (${xhr.status}): ${s3Code}`;
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed?.error) return String(parsed.error);
+    } catch {
+      // S3 errors are XML, not JSON.
+    }
+  }
+  return `Upload failed: ${xhr.status}`;
+}
 
 let uploadsState: UploadItem[] = [];
 const listeners: Set<() => void> = new Set();
@@ -71,12 +92,16 @@ export function useUpload() {
     setUploads((prev) => [...prev, uploadItem]);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("key", key);
-      if (currentBucketId) {
-        formData.append("bucketId", currentBucketId);
+      if (file.size > MAX_SINGLE_PUT_SIZE) {
+        throw new Error("File exceeds the 5 GiB single-PUT limit (multipart upload not supported yet)");
       }
+
+      const { url, contentType } = await requestUploadUrl({
+        key,
+        contentType: file.type || DEFAULT_CONTENT_TYPE,
+        size: file.size,
+        bucketId: currentBucketId,
+      });
 
       const xhr = new XMLHttpRequest();
 
@@ -97,14 +122,16 @@ export function useUpload() {
             );
             resolve();
           } else {
-            const error = xhr.responseText ? JSON.parse(xhr.responseText).error : `Upload failed: ${xhr.status}`;
-            reject(new Error(error));
+            reject(new Error(describeUploadError(xhr)));
           }
         });
 
         xhr.addEventListener("error", () => reject(new Error("Network error")));
-        xhr.open("POST", "/api/files/upload");
-        xhr.send(formData);
+        xhr.addEventListener("abort", () => reject(new Error("Upload aborted")));
+        xhr.open("PUT", url);
+        // Keep ContentType identical to the signing request so S3 stores it as object metadata.
+        xhr.setRequestHeader("Content-Type", contentType);
+        xhr.send(file);
       });
 
       queryClient.invalidateQueries({ queryKey: ["files"] });

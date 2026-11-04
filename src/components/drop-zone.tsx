@@ -85,6 +85,11 @@ export function DropZone() {
                       {formatBytes(upload.file.size)}
                     </span>
                   </div>
+                  {upload.status === "error" && upload.error && (
+                    <p className="text-[10px] text-destructive mt-0.5 wrap-break-word" title={upload.error}>
+                      {upload.error}
+                    </p>
+                  )}
                 </div>
                 <button onClick={() => removeUpload(upload.id)} className="shrink-0">
                   <X className="h-3 w-3 text-text-tertiary hover:text-text-primary" />
