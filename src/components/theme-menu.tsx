@@ -41,7 +41,7 @@ export function ThemeMenu() {
       <div ref={dropdownRef} className="relative">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="h-9 w-9 rounded-lg flex items-center justify-center hover:bg-hover-bg transition-colors"
+          className={`h-9 w-9 rounded-lg flex items-center justify-center transition-colors hover:bg-hover-bg ${isOpen ? "bg-hover-bg" : ""}`}
         >
           <MoreHorizontal className="h-4 w-4 text-text-tertiary" />
         </button>

@@ -588,9 +588,7 @@ function ImageLightbox({
             opacity: loaded ? 1 : 0,
             transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
             cursor: scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
-            // No opacity ramp: a cached image is fully visible the frame it lands, and a
-            // 300ms fade read as lag on every single open.
-            transition: isDragging ? 'none' : 'transform 0.2s ease'
+            transition: isDragging ? 'none' : 'transform 0.2s ease, opacity 0.3s ease'
           }}
           onLoad={() => setLoaded(true)}
           onClick={(e) => e.stopPropagation()}
