@@ -150,6 +150,22 @@
     font-feature-settings: "cv01", "ss03";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Until the head script has decided, let the browser pick the scheme from the OS.
+       Without this the canvas is always light, so dark mode flashes white on reload. */
+    color-scheme: light dark;
+    background-color: #ffffff;
+    /* Second declaration wins where light-dark() exists; the line above is the fallback. */
+    background-color: light-dark(#ffffff, #08090a);
+  }
+
+  html.dark {
+    color-scheme: dark;
+    background-color: #08090a;
+  }
+
+  html.light {
+    color-scheme: light;
+    background-color: #ffffff;
   }
   
   body {
@@ -157,10 +173,6 @@
     color: var(--text-primary);
     overflow: hidden;
     height: 100%;
-  }
-  
-  .dark body {
-    color-scheme: dark;
   }
   
   code, pre, monospace {

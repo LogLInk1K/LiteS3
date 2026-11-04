@@ -44,10 +44,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     let effectiveTheme: "light" | "dark";
 
     if (theme === "system") {
-      effectiveTheme = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+      effectiveTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     } else {
       effectiveTheme = theme;
     }
+
+    // The inline script in <head> already put the right class on <html> before the first
+    // paint. Re-applying it here would fire a 250ms view transition on every load, and
+    // that crossfade is what reads as a white flash - so skip it when nothing changes.
+    if (root.classList.contains(effectiveTheme)) return;
 
     if (document.startViewTransition) {
       const transition = document.startViewTransition(() => {
@@ -73,9 +78,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (theme !== "system") return;
 
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = (e: MediaQueryListEvent) => {
-      applyTheme(e.matches ? "light" : "dark");
+      applyTheme(e.matches ? "dark" : "light");
     };
 
     mediaQuery.addEventListener("change", handleChange);
