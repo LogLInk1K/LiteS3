@@ -1,43 +1,11 @@
 import { getDatabase, getSchema, ensureDatabase, type DatabaseConfig, detectDatabaseConfig } from "./db";
 import { eq } from "drizzle-orm";
 
-let isInitialized = false;
-
-const SETUP_CACHE_TTL = 30_000;
-let setupCompletedCache: { value: boolean; timestamp: number } | null = null;
-
-export function invalidateSetupCache(): void {
-  setupCompletedCache = null;
-}
-
-export async function initializeDatabase(): Promise<boolean> {
-  if (isInitialized) return true;
-
-  try {
-    await ensureDatabase();
-    isInitialized = true;
-    return true;
-  } catch (error) {
-    console.error("Failed to initialize database:", error);
-    return false;
-  }
-}
-
+// Setup state is one-way (false -> true) and can be flipped by another worker
+// instance, so never cache it in process memory: always read the database.
 export async function isSetupCompleted(): Promise<boolean> {
   try {
-    const now = Date.now();
-    if (setupCompletedCache && now - setupCompletedCache.timestamp < SETUP_CACHE_TTL) {
-      return setupCompletedCache.value;
-    }
-
-    if (!isInitialized) {
-      const initialized = await initializeDatabase();
-      if (!initialized) {
-        setupCompletedCache = { value: false, timestamp: now };
-        return false;
-      }
-    }
-
+    await ensureDatabase();
     const db = getDatabase();
     const s = getSchema();
     const result = await db
@@ -46,20 +14,16 @@ export async function isSetupCompleted(): Promise<boolean> {
       .where(eq(s.systemSettings.key, "setup_completed"))
       .limit(1);
 
-    const completed = result.length > 0 && result[0].value === "true";
-    setupCompletedCache = { value: completed, timestamp: now };
-    return completed;
+    return result.length > 0 && result[0].value === "true";
   } catch (error) {
-    setupCompletedCache = { value: true, timestamp: Date.now() };
-    return true;
+    console.error("Failed to check setup status:", error);
+    return false;
   }
 }
 
 export async function getSystemSetting(key: string): Promise<string | null> {
   try {
-    if (!isInitialized) {
-      await initializeDatabase();
-    }
+    await ensureDatabase();
 
     const db = getDatabase();
     const s = getSchema();
@@ -76,9 +40,7 @@ export async function getSystemSetting(key: string): Promise<string | null> {
 }
 
 export async function setSystemSetting(key: string, value: string): Promise<void> {
-  if (!isInitialized) {
-    await initializeDatabase();
-  }
+  await ensureDatabase();
 
   const db = getDatabase();
   const s = getSchema();

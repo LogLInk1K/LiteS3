@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { isSetupCompleted } from "@/lib/system";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const completed = await isSetupCompleted();

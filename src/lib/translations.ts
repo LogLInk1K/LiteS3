@@ -308,7 +308,7 @@ export const translations = {
       region: "区域",
       bucketName: "存储桶名称",
       accessKeyId: "访问密钥 ID",
-      secretAccessKey: "秘密访问密钥",
+      secretAccessKey: "机密访问密钥",
       publicUrl: "公开域根地址",
       publicMode: "公开桶（桶内文件任何人可读）",
       publicUrlHint: "请先在 R2 侧开启 Public access（自定义域或 r2.dev 子域），再填写该域根地址。链接永久有效、无需登录、无法单独撤销。",

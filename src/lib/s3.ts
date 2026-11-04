@@ -11,6 +11,7 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getDatabase, getSchema, type Bucket } from "./db";
 import { encrypt, decrypt, isEncrypted } from "./encryption";
+import { buildPublicUrl } from "./public-url";
 import { eq } from "drizzle-orm";
 
 export interface BucketConfig {
@@ -401,13 +402,16 @@ export async function getPresignedUploadUrl(bucketId: string, key: string, conte
 export async function getPresignedDownloadUrl(bucketId: string, key: string, expiresIn: number = 3600) {
   const config = await getBucketConfig(bucketId);
   if (!config) throw new Error("Bucket not found");
-  
+  return getPresignedDownloadUrlForConfig(config, key, expiresIn);
+}
+
+export async function getPresignedDownloadUrlForConfig(config: BucketConfig, key: string, expiresIn: number = 3600) {
   const client = createS3Client(config);
   const command = new GetObjectCommand({
     Bucket: config.bucketName,
     Key: key,
   });
-  
+
   return getSignedUrl(client, command, { expiresIn });
 }
 
@@ -454,10 +458,7 @@ export async function testBucketConnection(config: Omit<BucketConfig, "id" | "is
 }
 
 export function getPublicUrl(config: BucketConfig, key: string): string | null {
-  if (!config.publicUrl) return null;
-  const base = config.publicUrl.replace(/\/+$/, "");
-  const encodedKey = key.split("/").map(encodeURIComponent).join("/");
-  return `${base}/${encodedKey}`;
+  return buildPublicUrl(config.publicUrl, key);
 }
 
 export async function uploadObject(bucketId: string, key: string, body: Buffer | Uint8Array, contentType: string) {

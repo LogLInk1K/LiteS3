@@ -1,3 +1,5 @@
+import { mkdirSync } from "fs";
+import { dirname, isAbsolute, resolve } from "path";
 import { drizzle as drizzleLibsql } from "drizzle-orm/libsql";
 import { drizzle as drizzlePg } from "drizzle-orm/postgres-js";
 import { createClient as createLibsqlClient, type Client as LibsqlClient } from "@libsql/client";
@@ -136,7 +138,17 @@ export async function createDatabase(config?: DatabaseConfig): Promise<any> {
   return createSqliteDatabase(effectiveConfig);
 }
 
+function ensureLocalDatabaseDirectory(url: string) {
+  // SQLite creates a missing database file on demand, but never its parent directory.
+  if (!url.startsWith("file:")) return;
+  const filePath = url.slice("file:".length).split("?")[0];
+  if (!filePath) return;
+  mkdirSync(dirname(isAbsolute(filePath) ? filePath : resolve(filePath)), { recursive: true });
+}
+
 async function createSqliteDatabase(config: DatabaseConfig) {
+  ensureLocalDatabaseDirectory(config.url);
+
   const client = createLibsqlClient({
     url: config.url,
     authToken: config.authToken,

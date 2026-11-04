@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getPresignedDownloadUrl, getPublicUrl, getDefaultBucket, getBucketConfig } from "@/lib/s3";
+import { getPresignedDownloadUrlForConfig, getPublicUrl, getDefaultBucket, getBucketConfig } from "@/lib/s3";
 import { ensureDatabase } from "@/lib/db";
 
 const MAX_PRESIGNED_EXPIRES = 3600;
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ url: publicUrl, permanent: true });
     }
 
-    const url = await getPresignedDownloadUrl(bucketId || bucket.id, key, expiresIn);
+    const url = await getPresignedDownloadUrlForConfig(bucket, key, expiresIn);
     return NextResponse.json({ url, permanent: false, expiresIn });
   } catch (error: unknown) {
     console.error("GET /api/files/link error:", error);

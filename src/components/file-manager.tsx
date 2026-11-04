@@ -239,7 +239,7 @@ export function FileManager() {
                       type="text"
                       value={formData.accessKeyId}
                       onChange={(e) => setFormData((prev) => ({ ...prev, accessKeyId: e.target.value }))}
-                      placeholder="AKIA..."
+                      placeholder="••••••••"
                       required
                       className="w-full px-3 py-2 rounded-lg bg-hover-bg border border-border-subtle text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-brand-indigo text-sm"
                     />

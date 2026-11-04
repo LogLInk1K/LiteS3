@@ -1,48 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
-import { createDatabase, getSchema, setDatabaseInstance, getDatabase, ensureDatabase, detectDatabaseConfig, type DatabaseConfig } from "@/lib/db";
+import { createDatabase, getSchema, setDatabaseInstance, detectDatabaseConfig, type DatabaseConfig } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
-import { invalidateSetupCache } from "@/lib/system";
+import { isSetupCompleted } from "@/lib/system";
 
-let initializationCheckCache: { checked: boolean; initialized: boolean; timestamp: number } | null = null;
-const INIT_CACHE_TTL = 30_000;
+export const dynamic = "force-dynamic";
 
 let isInitializing = false;
 
 const testConnectionAttempts = new Map<string, { count: number; firstAttempt: number }>();
 const TEST_CONN_MAX_ATTEMPTS = 5;
 const TEST_CONN_WINDOW = 60_000;
-
-function invalidateInitializationCache(): void {
-  initializationCheckCache = null;
-}
-
-async function checkIfInitialized(): Promise<boolean> {
-  const now = Date.now();
-  if (initializationCheckCache?.checked && now - initializationCheckCache.timestamp < INIT_CACHE_TTL) {
-    return initializationCheckCache.initialized;
-  }
-
-  try {
-    await ensureDatabase();
-    const db = getDatabase();
-    const s = getSchema();
-
-    const setupCompleted = await db
-      .select()
-      .from(s.systemSettings)
-      .where(eq(s.systemSettings.key, "setup_completed"));
-
-    const isInitialized = setupCompleted.length > 0 && setupCompleted[0].value === "true";
-
-    initializationCheckCache = { checked: true, initialized: isInitialized, timestamp: now };
-
-    return isInitialized;
-  } catch {
-    initializationCheckCache = { checked: true, initialized: true, timestamp: now };
-    return true;
-  }
-}
 
 function checkTestConnectionRateLimit(ip: string): boolean {
   const now = Date.now();
@@ -63,7 +31,7 @@ function checkTestConnectionRateLimit(ip: string): boolean {
 
 export async function GET() {
   try {
-    const isInitialized = await checkIfInitialized();
+    const isInitialized = await isSetupCompleted();
     const response: { initialized: boolean; databaseType?: string } = {
       initialized: isInitialized,
     };
@@ -74,13 +42,13 @@ export async function GET() {
     return NextResponse.json(response);
   } catch (error: unknown) {
     console.error("GET /api/setup error:", error);
-    return NextResponse.json({ initialized: true });
+    return NextResponse.json({ error: "Failed to check setup status" }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const isInitialized = await checkIfInitialized();
+    const isInitialized = await isSetupCompleted();
     if (isInitialized) {
       console.warn("[SECURITY] Attempted to reinitialize already setup system");
       return NextResponse.json(
@@ -195,10 +163,6 @@ async function initializeSystem(config: DatabaseConfig, admin: { username: strin
       });
     });
 
-    initializationCheckCache = { checked: true, initialized: true, timestamp: Date.now() };
-    invalidateSetupCache();
-    invalidateInitializationCache();
-
     console.log("[SECURITY] System initialized successfully with driver:", config.driver);
 
     return NextResponse.json({
@@ -207,7 +171,6 @@ async function initializeSystem(config: DatabaseConfig, admin: { username: strin
     });
   } catch (error: unknown) {
     console.error("Initialization error:", error);
-    invalidateInitializationCache();
     return NextResponse.json({ success: false, error: "Initialization failed" }, { status: 400 });
   } finally {
     isInitializing = false;

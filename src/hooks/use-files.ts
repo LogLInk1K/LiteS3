@@ -1,7 +1,9 @@
 "use client";
 
+import { useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FileOrFolder } from "@/store/file-store";
+import { buildPublicUrl } from "@/lib/public-url";
 
 async function fetchFiles(prefix: string, bucketId?: string | null) {
   const url = new URL("/api/files", window.location.origin);
@@ -171,6 +173,23 @@ export function useFileLink() {
     mutationFn: ({ key, expiresIn, bucketId }: { key: string; expiresIn?: number; bucketId?: string | null }) =>
       getFileLink(key, expiresIn, bucketId),
   });
+}
+
+/**
+ * Public buckets have permanent anonymous URLs, so they can be built locally
+ * with zero API calls. Private buckets still need a server-side presigned URL.
+ */
+export function useResolvedFileLink(publicUrl?: string | null) {
+  const { mutateAsync } = useFileLink();
+
+  return useCallback(
+    async (key: string, bucketId?: string | null): Promise<FileLinkResponse> => {
+      const direct = buildPublicUrl(publicUrl, key);
+      if (direct) return { url: direct, permanent: true };
+      return mutateAsync({ key, bucketId });
+    },
+    [publicUrl, mutateAsync],
+  );
 }
 
 export function useMoveFile() {

@@ -1,10 +1,9 @@
 "use client";
 
 import { useFileStore, FileOrFolder } from "@/store/file-store";
-import { useFiles, useMoveFile, useCopyFile } from "@/hooks/use-files";
+import { useFiles, useMoveFile, useCopyFile, useBuckets, useResolvedFileLink } from "@/hooks/use-files";
 import { useUpload } from "@/hooks/use-upload";
 import { useSelectionBox } from "@/hooks/use-selection-box";
-import { useFileLink } from "@/hooks/use-files";
 import { FileCard, FileCardSkeleton } from "./file-card";
 import { FileListItem } from "./file-list-item";
 import { NewFolderDialog } from "./dialogs/new-folder-dialog";
@@ -33,7 +32,12 @@ export function FileTable() {
   } = useFileStore();
   const { data, isLoading, error } = useFiles(currentPrefix, currentBucketId);
   const { activeUploads, uploadFiles, removeUpload } = useUpload();
-  const linkMutation = useFileLink();
+  const { data: bucketsData } = useBuckets();
+  const buckets = bucketsData?.buckets || [];
+  const currentBucket = buckets.find((b: { id: string }) => b.id === currentBucketId)
+    || buckets.find((b: { isDefault: boolean }) => b.isDefault)
+    || buckets[0];
+  const resolveLink = useResolvedFileLink(currentBucket?.publicUrl);
   const moveMutation = useMoveFile();
   const copyMutation = useCopyFile();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -111,7 +115,7 @@ export function FileTable() {
   const handleBatchDownload = async () => {
     const keys = Array.from(selectedItems);
     for (const key of keys) {
-      const result = await linkMutation.mutateAsync({ key, bucketId: currentBucketId });
+      const result = await resolveLink(key, currentBucketId);
       if (result.url) {
         window.open(result.url, "_blank");
       }

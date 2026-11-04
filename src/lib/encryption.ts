@@ -5,14 +5,22 @@ const IV_LENGTH = 16;
 const AUTH_TAG_LENGTH = 16;
 const ENCRYPTION_PREFIX = "enc:";
 const KEY_LENGTH = 32;
+const SALT = "lites3-encryption-salt";
+
+let cachedKey: Buffer | null = null;
+let cachedSource: string | null = null;
 
 function getEncryptionKey(): Buffer {
   const key = process.env.ENCRYPTION_KEY;
   if (!key) {
     throw new Error("ENCRYPTION_KEY environment variable is not set");
   }
-  const salt = "lites3-encryption-salt";
-  return scryptSync(key, salt, KEY_LENGTH);
+  // scrypt is deliberately CPU-hard; derive once per process instead of on
+  // every credential decrypt.
+  if (cachedKey && cachedSource === key) return cachedKey;
+  cachedKey = scryptSync(key, SALT, KEY_LENGTH);
+  cachedSource = key;
+  return cachedKey;
 }
 
 export function encrypt(plaintext: string): string {

@@ -2,14 +2,13 @@
 
 import { useEffect } from "react";
 import { useFileStore } from "@/store/file-store";
-import { useFileLink, useBuckets } from "@/hooks/use-files";
+import { useResolvedFileLink, useBuckets } from "@/hooks/use-files";
 import { useTranslation } from "@/hooks/use-translation";
 import { Pencil, Trash2, Copy, Move, Link, Download, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function ContextMenu() {
   const { contextMenu, closeContextMenu, setPreviewItem, openRenameDialog, openMoveDialog, openCopyDialog, startDelete, currentBucketId } = useFileStore();
-  const linkMutation = useFileLink();
   const { t } = useTranslation();
   const { data: bucketsData } = useBuckets();
   const buckets = bucketsData?.buckets || [];
@@ -17,6 +16,7 @@ export function ContextMenu() {
     || buckets.find((b: { isDefault: boolean }) => b.isDefault)
     || buckets[0];
   const isPublic = !!currentBucket?.publicUrl;
+  const resolveLink = useResolvedFileLink(currentBucket?.publicUrl);
 
   useEffect(() => {
     if (!contextMenu) return;
@@ -54,7 +54,7 @@ export function ContextMenu() {
 
   const handleCopyLink = async () => {
     closeContextMenu();
-    const result = await linkMutation.mutateAsync({ key: item.key, bucketId: currentBucketId });
+    const result = await resolveLink(item.key, currentBucketId);
     if (result.url) {
       await navigator.clipboard.writeText(result.url);
     }
@@ -62,7 +62,7 @@ export function ContextMenu() {
 
   const handleDownload = async () => {
     closeContextMenu();
-    const result = await linkMutation.mutateAsync({ key: item.key, bucketId: currentBucketId });
+    const result = await resolveLink(item.key, currentBucketId);
     if (result.url) {
       window.open(result.url, "_blank");
     }
