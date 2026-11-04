@@ -10,10 +10,11 @@ import { Check } from "lucide-react";
 
 interface FileCardProps {
   item: FileOrFolder;
+  thumbnailUrl?: string;
 }
 
-export function FileCard({ item }: FileCardProps) {
-  const { navigateToFolder, setPreviewItem, selectedItems, toggleSelect, openContextMenu, currentBucketId } = useFileStore();
+export function FileCard({ item, thumbnailUrl }: FileCardProps) {
+  const { navigateToFolder, setPreviewItem, selectedItems, toggleSelect, openContextMenu } = useFileStore();
   const isSelected = selectedItems.has(item.key);
   const isFolder = item.type === "folder";
   const hasThumbnail = !isFolder && isThumbnailable(item.name);
@@ -82,7 +83,7 @@ export function FileCard({ item }: FileCardProps) {
           {isFolder ? (
             <FolderIcon className="h-12 w-12 text-brand-indigo" />
           ) : hasThumbnail ? (
-            <Thumbnail name={item.name} itemKey={item.key} bucketId={currentBucketId} size="card" />
+            <Thumbnail name={item.name} src={thumbnailUrl} size="card" />
           ) : (
             <FileIcon name={item.name} className="h-12 w-12 text-text-tertiary" />
           )}

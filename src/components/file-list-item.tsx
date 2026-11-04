@@ -11,10 +11,11 @@ import { useTranslation } from "@/hooks/use-translation";
 
 interface FileListItemProps {
   item: FileOrFolder;
+  thumbnailUrl?: string;
 }
 
-export function FileListItem({ item }: FileListItemProps) {
-  const { navigateToFolder, setPreviewItem, selectedItems, toggleSelect, openContextMenu, currentBucketId } = useFileStore();
+export function FileListItem({ item, thumbnailUrl }: FileListItemProps) {
+  const { navigateToFolder, setPreviewItem, selectedItems, toggleSelect, openContextMenu } = useFileStore();
   const { language } = useTranslation();
   const isSelected = selectedItems.has(item.key);
   const isFolder = item.type === "folder";
@@ -80,7 +81,7 @@ export function FileListItem({ item }: FileListItemProps) {
       {isFolder ? (
         <FolderIcon className="h-5 w-5 text-brand-indigo shrink-0" />
       ) : hasThumbnail ? (
-        <Thumbnail name={item.name} itemKey={item.key} bucketId={currentBucketId} size="list" />
+        <Thumbnail name={item.name} src={thumbnailUrl} size="list" />
       ) : (
         <FileIcon name={item.name} className="h-5 w-5 text-text-tertiary shrink-0" />
       )}

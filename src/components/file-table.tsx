@@ -1,7 +1,8 @@
 "use client";
 
 import { useFileStore, FileOrFolder } from "@/store/file-store";
-import { useFiles, useMoveFile, useCopyFile, useBuckets, useResolvedFileLinks } from "@/hooks/use-files";
+import { useFiles, useMoveFile, useCopyFile, useBuckets, useResolvedFileLinks, useThumbnailUrls } from "@/hooks/use-files";
+import { isImageFile } from "@/hooks/use-thumbnail";
 import { useUpload } from "@/hooks/use-upload";
 import { useSelectionBox } from "@/hooks/use-selection-box";
 import { FileCard, FileCardSkeleton } from "./file-card";
@@ -109,6 +110,10 @@ export function FileTable() {
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
   const pagedItems = filteredItems.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const imageKeys = pagedItems
+    .filter((item) => item.type !== "folder" && isImageFile(item.name))
+    .map((item) => item.key);
+  const thumbnailUrls = useThumbnailUrls(imageKeys, currentBucketId, currentBucket?.publicUrl);
 
   const pathParts = currentPrefix.split("/").filter(Boolean);
 
@@ -398,7 +403,7 @@ export function FileTable() {
             style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}
           >
             {pagedItems.map((item) => (
-              <FileCard key={item.key} item={item} />
+              <FileCard key={item.key} item={item} thumbnailUrl={thumbnailUrls[item.key]} />
             ))}
           </div>
         ) : (
@@ -411,7 +416,7 @@ export function FileTable() {
               <span className="w-36 text-right">{t("files.modified")}</span>
             </div>
             {pagedItems.map((item) => (
-              <FileListItem key={item.key} item={item} />
+              <FileListItem key={item.key} item={item} thumbnailUrl={thumbnailUrls[item.key]} />
             ))}
           </div>
         )}

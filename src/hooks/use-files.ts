@@ -224,6 +224,38 @@ export function useResolvedFileLinks(publicUrl?: string | null) {
   );
 }
 
+/**
+ * Resolves object URLs for a page of images. Public buckets are built locally
+ * with zero requests; private buckets need exactly one batched presigning call.
+ * URLs are cached so re-renders and page switches can reuse them from the
+ * browser's HTTP cache instead of re-signing.
+ */
+export function useThumbnailUrls(
+  keys: string[],
+  bucketId?: string | null,
+  publicUrl?: string | null,
+): Record<string, string> {
+  const { data } = useQuery({
+    queryKey: ["thumbnail-urls", bucketId ?? null, keys],
+    queryFn: () => getFileLinks(keys, 3600, bucketId, false),
+    enabled: keys.length > 0 && !publicUrl,
+    staleTime: 30 * 60 * 1000,
+  });
+
+  const result: Record<string, string> = {};
+  if (publicUrl) {
+    for (const key of keys) {
+      const url = buildPublicUrl(publicUrl, key);
+      if (url) result[key] = url;
+    }
+    return result;
+  }
+  for (const link of data ?? []) {
+    if (link.url) result[link.key] = link.url;
+  }
+  return result;
+}
+
 export function useMoveFile() {
   const queryClient = useQueryClient();
   return useMutation({
