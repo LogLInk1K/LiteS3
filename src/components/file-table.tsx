@@ -444,7 +444,7 @@ export function FileTable() {
             {selectedCount}
           </span>
         </div>
-        <span className="text-sm text-text-secondary">
+        <span className="hidden sm:inline text-sm text-text-secondary">
           {t("files.selected")}
         </span>
         <div className="flex-1" />
@@ -454,28 +454,28 @@ export function FileTable() {
             className="flex items-center gap-1.5 px-2.5 h-7 rounded-md text-xs text-text-secondary hover:text-text-primary hover:bg-hover-bg transition-colors"
           >
             <Download className="h-3.5 w-3.5" />
-            <span>{t("files.download")}</span>
+            <span className="hidden sm:inline">{t("files.download")}</span>
           </button>
           <button
             onClick={handleBatchMove}
             className="flex items-center gap-1.5 px-2.5 h-7 rounded-md text-xs text-text-secondary hover:text-text-primary hover:bg-hover-bg transition-colors"
           >
             <Move className="h-3.5 w-3.5" />
-            <span>{t("files.move")}</span>
+            <span className="hidden sm:inline">{t("files.move")}</span>
           </button>
           <button
             onClick={handleBatchCopy}
             className="flex items-center gap-1.5 px-2.5 h-7 rounded-md text-xs text-text-secondary hover:text-text-primary hover:bg-hover-bg transition-colors"
           >
             <Copy className="h-3.5 w-3.5" />
-            <span>{t("files.copy")}</span>
+            <span className="hidden sm:inline">{t("files.copy")}</span>
           </button>
           <button
             onClick={handleBatchDelete}
             className="flex items-center gap-1.5 px-2.5 h-7 rounded-md text-xs text-destructive hover:bg-destructive/10 transition-colors"
           >
             <Trash2 className="h-3.5 w-3.5" />
-            <span>{t("files.delete")}</span>
+            <span className="hidden sm:inline">{t("files.delete")}</span>
           </button>
         </div>
         <div className="w-px h-4 bg-border-subtle mx-1" />
@@ -519,12 +519,13 @@ export function FileTable() {
           </div>
         ) : (
           <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-3 px-3 py-2 text-xs text-text-quaternary border-b border-border-subtle">
-              <div className="w-4" />
-              <div className="h-5 w-5" />
-              <span className="flex-1">{t("files.name")}</span>
-              <span className="w-20 text-right">{t("files.size")}</span>
-              <span className="w-36 text-right">{t("files.modified")}</span>
+            {/* Mirrors FileListItem's columns: every fixed cell is shrink-0 so only the name gives way on narrow screens */}
+            <div className="flex items-center gap-3 max-sm:gap-2 px-3 py-2 text-xs text-text-quaternary border-b border-border-subtle">
+              <div className="w-5 shrink-0" />
+              <div className="h-8 w-8 shrink-0" />
+              <span className="flex-1 min-w-0">{t("files.name")}</span>
+              <span className="w-14 sm:w-20 shrink-0 text-right">{t("files.size")}</span>
+              <span className="hidden sm:block w-36 shrink-0 text-right">{t("files.modified")}</span>
             </div>
             {pagedItems.map((item) => (
               <FileListItem key={item.key} item={item} thumbnailUrl={thumbnailUrls[item.key]} />

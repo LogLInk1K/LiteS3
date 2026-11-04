@@ -54,7 +54,7 @@ export function FileListItem({ item, thumbnailUrl }: FileListItemProps) {
     <div
       data-key={item.key}
       className={cn(
-        "group flex items-center gap-3 px-3 py-2 rounded-md transition-colors duration-150 cursor-pointer",
+        "group flex items-center gap-3 max-sm:gap-2 px-3 py-2 rounded-md transition-colors duration-150 cursor-pointer",
         !isSelected && "hover:bg-hover-bg",
         isSelected && "bg-accent-violet/10"
       )}
@@ -62,7 +62,7 @@ export function FileListItem({ item, thumbnailUrl }: FileListItemProps) {
       onClick={handleRowClick}
       onContextMenu={handleContextMenu}
     >
-      <div onClick={handleSelect}>
+      <div onClick={handleSelect} className="shrink-0">
         <div
           className={cn(
             "h-5 w-5 rounded transition-all duration-150 flex items-center justify-center shrink-0",
@@ -78,13 +78,16 @@ export function FileListItem({ item, thumbnailUrl }: FileListItemProps) {
         </div>
       </div>
 
-      {isFolder ? (
-        <FolderIcon className="h-5 w-5 text-brand-indigo shrink-0" />
-      ) : hasThumbnail ? (
-        <Thumbnail name={item.name} src={thumbnailUrl} size="list" />
-      ) : (
-        <FileIcon name={item.name} className="h-5 w-5 text-text-tertiary shrink-0" />
-      )}
+      {/* One 32px icon column for every row: list thumbnails are already h-8 w-8, so the 20px icons get centred instead of narrowing the column */}
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center">
+        {isFolder ? (
+          <FolderIcon className="h-5 w-5 text-brand-indigo" />
+        ) : hasThumbnail ? (
+          <Thumbnail name={item.name} src={thumbnailUrl} size="list" />
+        ) : (
+          <FileIcon name={item.name} className="h-5 w-5 text-text-tertiary" />
+        )}
+      </div>
 
       <div className="flex-1 min-w-0 flex items-center">
         <span 
@@ -95,17 +98,14 @@ export function FileListItem({ item, thumbnailUrl }: FileListItemProps) {
         </span>
       </div>
 
-      {!isFolder && "size" in item && (
-        <span className="text-xs text-text-tertiary w-20 text-right shrink-0">
-          {formatBytes(item.size)}
-        </span>
-      )}
+      {/* Folders carry no size/date, but the cells stay so every row lines up with the header */}
+      <span className="text-xs text-text-tertiary w-14 sm:w-20 text-right shrink-0 whitespace-nowrap">
+        {item.type === "file" ? formatBytes(item.size) : ""}
+      </span>
 
-      {!isFolder && "lastModified" in item && (
-        <span className="text-xs text-text-tertiary w-36 text-right shrink-0">
-          {formatDate(item.lastModified, language === "en" ? "en-US" : "zh-CN")}
-        </span>
-      )}
+      <span className="hidden sm:block text-xs text-text-tertiary w-36 text-right shrink-0 whitespace-nowrap">
+        {item.type === "file" ? formatDate(item.lastModified, language === "en" ? "en-US" : "zh-CN") : ""}
+      </span>
     </div>
   );
 }
