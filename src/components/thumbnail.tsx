@@ -1,15 +1,39 @@
 "use client";
 
-import { isVideoFile } from "@/hooks/use-thumbnail";
+import { isAudioFile, isVideoFile } from "@/hooks/use-thumbnail";
 import { cn } from "@/lib/utils";
 import { useState, useRef, useEffect } from "react";
-import { Play } from "lucide-react";
+import { Music, Play } from "lucide-react";
 
 interface ThumbnailProps {
   name: string;
   src?: string;
   size?: "card" | "list";
   className?: string;
+}
+
+/** Front-end replica of the old server-generated cover: dark tile + indigo glyph. */
+function MediaCover({ name, size }: { name: string; size: "card" | "list" }) {
+  return (
+    <div
+      className={cn(
+        "relative flex items-center justify-center overflow-hidden",
+        size === "card" ? "h-20 w-20 rounded-lg" : "h-8 w-8 rounded"
+      )}
+      style={{ backgroundColor: "#1a1a2e" }}
+    >
+      {isVideoFile(name) ? (
+        <svg viewBox="0 0 100 100" className="h-full w-full" aria-hidden="true">
+          <polygon points="35,25 35,75 70,50" fill="#6366f1" />
+        </svg>
+      ) : (
+        <Music
+          className={cn("text-[#6366f1]", size === "card" ? "h-8 w-8" : "h-4 w-4")}
+          strokeWidth={2}
+        />
+      )}
+    </div>
+  );
 }
 
 export function Thumbnail({ name, src, size = "card", className }: ThumbnailProps) {
@@ -58,9 +82,10 @@ export function Thumbnail({ name, src, size = "card", className }: ThumbnailProp
   const loading = visible && !!src && !loaded && !error;
   const showImage = visible && !!src && !error;
   const showPlaceholder = !loaded || !src || error;
+  const showCover = !src && (isVideoFile(name) || isAudioFile(name));
 
   return (
-    <div ref={ref} className={cn("relative overflow-hidden flex items-center justify-center", size === "card" ? "h-20 w-full" : "h-8 w-8 shrink-0", className)}>
+    <div ref={ref} className={cn("relative overflow-hidden flex items-center justify-center", size === "card" ? "h-20 w-full min-w-20" : "h-8 w-8 shrink-0", className)}>
       <div
         aria-hidden="true"
         className={cn(
@@ -68,15 +93,21 @@ export function Thumbnail({ name, src, size = "card", className }: ThumbnailProp
           showPlaceholder ? "opacity-100" : "opacity-0"
         )}
       >
-        <div className={cn("flex items-center justify-center rounded-lg", size === "card" ? "h-12 w-12" : "h-8 w-8", "bg-hover-bg", loading && "animate-pulse")}>
-          {isVideoFile(name) ? (
-            <Play className="h-4 w-4 text-text-tertiary" fill="currentColor" />
-          ) : (
-            <span className="text-[10px] text-text-tertiary uppercase font-medium">
-              {name.split(".").pop()}
-            </span>
-          )}
-        </div>
+        {showCover ? (
+          <MediaCover name={name} size={size} />
+        ) : (
+          <div className={cn("flex items-center justify-center rounded-lg", size === "card" ? "h-12 w-12" : "h-8 w-8", "bg-hover-bg", loading && "animate-pulse")}>
+            {isVideoFile(name) ? (
+              <Play className="h-4 w-4 text-text-tertiary" fill="currentColor" />
+            ) : isAudioFile(name) ? (
+              <Music className="h-4 w-4 text-text-tertiary" />
+            ) : (
+              <span className="text-[10px] text-text-tertiary uppercase font-medium">
+                {name.split(".").pop()}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {showImage && (

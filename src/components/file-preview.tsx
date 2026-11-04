@@ -38,6 +38,7 @@ import dockerfile from "react-syntax-highlighter/dist/esm/languages/hljs/dockerf
 import diff from "react-syntax-highlighter/dist/esm/languages/hljs/diff";
 import plaintext from "react-syntax-highlighter/dist/esm/languages/hljs/plaintext";
 import { useTranslation } from "@/hooks/use-translation";
+import { getStableObjectUrl } from "@/hooks/use-files";
 
 const MAX_PREVIEW_SIZE = 1024 * 1024;
 
@@ -129,15 +130,6 @@ const EXT_TO_LANG: Record<string, string> = {
   cfg: "ini",
   conf: "ini",
 };
-
-async function getPresignedUrl(key: string, bucketId?: string | null): Promise<string | null> {
-  const params = new URLSearchParams({ key });
-  if (bucketId) params.set("bucketId", bucketId);
-  const res = await fetch(`/api/files/link?${params.toString()}`);
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.url || null;
-}
 
 async function getFileContent(key: string, bucketId?: string | null): Promise<string> {
   const params = new URLSearchParams({ key });
@@ -362,7 +354,7 @@ function ImageLightbox({
     setRotation(0);
     setPosition({ x: 0, y: 0 });
     positionRef.current = { x: 0, y: 0 };
-    getPresignedUrl(fileKey, bucketId).then((result) => {
+    getStableObjectUrl(fileKey, bucketId).then((result) => {
       if (result) setUrl(result);
     });
   }, [fileKey, bucketId]);
@@ -616,7 +608,7 @@ function VideoLightbox({
 
   useEffect(() => {
     setLoaded(false);
-    getPresignedUrl(fileKey, bucketId).then((result) => {
+    getStableObjectUrl(fileKey, bucketId).then((result) => {
       if (result) setUrl(result);
     });
   }, [fileKey, bucketId]);
@@ -677,7 +669,7 @@ function MediaPreview({ fileKey, type, bucketId }: { fileKey: string; type: "aud
   const [url, setUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    getPresignedUrl(fileKey, bucketId).then((result) => {
+    getStableObjectUrl(fileKey, bucketId).then((result) => {
       if (result) setUrl(result);
     }).catch(() => {});
   }, [fileKey, bucketId]);

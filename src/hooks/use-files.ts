@@ -283,6 +283,19 @@ async function getStableObjectUrls(keys: string[], bucketId?: string | null): Pr
 }
 
 /**
+ * Single-object variant for the lightbox. A thumbnail and its full-size view
+ * are the same object now, so both must resolve to the exact same URL for the
+ * browser cache to be reusable; re-signing here would force a second download.
+ */
+export async function getStableObjectUrl(
+  key: string,
+  bucketId?: string | null,
+): Promise<string | null> {
+  const [link] = await getStableObjectUrls([key], bucketId);
+  return link?.url ?? null;
+}
+
+/**
  * Resolves object URLs for a page of images. Public buckets are built locally
  * with zero requests; private buckets reuse persisted presigned URLs so a reload
  * neither re-signs nor re-downloads the images.
