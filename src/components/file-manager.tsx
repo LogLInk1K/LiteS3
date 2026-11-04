@@ -275,7 +275,7 @@ export function FileManager() {
                         type="text"
                         value={formData.publicUrl}
                         onChange={(e) => setFormData((prev) => ({ ...prev, publicUrl: e.target.value }))}
-                        placeholder="https://pub-xxx.r2.dev"
+                        placeholder="https://files.example.com"
                         required
                         className="w-full px-3 py-2 rounded-lg bg-hover-bg border border-border-subtle text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-brand-indigo text-sm"
                       />
